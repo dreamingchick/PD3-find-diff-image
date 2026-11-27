@@ -1,1 +1,9 @@
-export const answers: {id:number;x:number;y:number;r:number}[]; export function judge(x:number,y:number,found:number[],regions?:typeof answers): {kind:"invalid"|"correct"|"duplicate"|"wrong";id?:number};
+export type Hitbox={shape?:"circle";x:number;y:number;r:number}|{shape:"rect";x:number;y:number;w:number;h:number}|{shape:"polygon";points:[number,number][]};
+export type Answer={id:number;x:number;y:number;r:number;hitboxes?:[Hitbox,Hitbox]};
+export type View={z:number;x:number;y:number};
+export const answers:Answer[];
+export function contains(x:number,y:number,b:Hitbox):boolean;
+export function judge(x:number,y:number,found:number[],regions?:Answer[],side?:number):{kind:"invalid"|"correct"|"duplicate"|"wrong";id?:number};
+export function clampView(v:View):View;
+export function zoomView(v:View,z:number,x?:number,y?:number):View;
+export function imagePoint(v:View,x:number,y:number):{x:number;y:number};
