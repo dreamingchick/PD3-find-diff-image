@@ -10,3 +10,5 @@ Validation: 16 engine/progress tests, 3 Python image QA tests, strict Next build
 Remaining: coin/EXP growth and collection rewards, Studio, daily/server ranking, 30 approved stages, full accessibility/localization, integration/security/performance review and v1.0 approval. No claim of v0.2/v1.0 completion. Local imported progress must never authorize ranked records.
 
 DEV-015: mobile portrait puzzle frames now fill the available content width with the existing 16px page gutters. Removed the 35vh width cap, retaining square images and the desktop two-column layout. Existing desktop/mobile browser journeys now also check square proportions, near-full mobile width and desktop side-by-side placement.
+
+DEV-016: found-answer rings use a 5 CSS-pixel fluorescent lime stroke (#d9ff00) over an 8 CSS-pixel dark outline (#16302a). Width is independent of device pixel ratio and zoom, so high-density mobile screens retain a clear marker. Hint styling and answer hit regions are unchanged.
