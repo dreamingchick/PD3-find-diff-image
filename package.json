@@ -1,0 +1,14 @@
+{
+  "name": "pd3-find-diff-image",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @pd3/player",
+    "build": "npm run build -w @pd3/player",
+    "test": "node --test packages/game-engine/*.test.mjs"
+  }
+}
