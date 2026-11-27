@@ -1,7 +1,5 @@
-# Development progress — 2026-11-27
-
-- DEV-001–003: baseline CI success, run 45951963773.
-- DEV-004–005: Canvas renderer, extracted SVG fixtures, shared viewport, wheel/pinch/drag/buttons, loading gate implemented. Final integration CI run 45956791525; browser E2E not yet verified.
-- DEV-006: circle/rectangle/polygon, side-specific hitboxes, ambiguous input rejection, normalized inverse viewport. Eight unit tests passed in CI run 45956729834.
-- Temporary decisions: square sample images, fixed 4x maximum zoom, client-only sample judgment. Production per-side marker geometry, adaptive tolerance, content overlap validation, server authority and accessibility remain outstanding.
-- DEV-007–012 not started. No paid services or deployment.
+# Development progress
+DEV-001–006: baseline and Canvas integration CI passed; real device interaction not verified.
+DEV-011: scoring, stars, stage catalog and IndexedDB integration committed; CI 45984593401 success. Previous intermediate commit f223888 failed because caller omitted source/answers; fixed in 430a9c5.
+DEV-007–010: local 3-pair draft composite, 18 candidate regions, lossless WebP/Base64 export; 0 changed pixels outside boxes. Semantic review and asset transfer remain blocked. Strict QA validator and synthetic tests added. No competition data published.
+DEV-012: no production deployment or paid resources; staging pending.
