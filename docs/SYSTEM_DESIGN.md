@@ -1,0 +1,2 @@
+# Architecture
+Monorepo apps/player, apps/studio, apps/api, packages/game-engine, packages/ui, packages/types, workers/image-pipeline. Next.js/React/Canvas2D/DOM, TS, Python/OpenCV/Pillow, PostgreSQL, 모듈러 모놀리스 + worker. IndexedDB 진행/경제/설정; 서버는 임시 게임 세션 및 검증, 익명 토큰과 랭킹. 서버 발급 무작위 토큰, 해시 저장, 브라우저 지문 금지. 공식 기록은 서버만 확정. 로컬 경제 위변조 가능성을 인정하고 랭킹 분리. 공개 GitHub 서비스 이미지, 비공개 제작 저장소 정답/마스크/미공개 이미지. 배포 정적 파일로 서비스. 개발/스테이징/운영 분리, 백업/복구 검증, 보안 설정과 밸런스 설정 분리. DB 후보 및 호스팅 미선정.
