@@ -42,7 +42,7 @@ test('keyboard play, home and browser reload preserve normal progress',async({pa
  await page.goBack();await expect(page.getByRole('heading',{name:'어떤 그림을 만나볼까요?'})).toBeVisible();
 });
 
-test('both pictures and controls fit viewport; only explicit explore captures drag',async({page})=>{
+test('direct pinch or wheel zoom allows answers; landscape uses full height',async({page})=>{
  await page.goto('/');const viewport=page.viewportSize()!;
  if(viewport.width===320){
   const cdp=await page.context().newCDPSession(page);
@@ -52,24 +52,64 @@ test('both pictures and controls fit viewport; only explicit explore captures dr
   await expect.poll(()=>page.evaluate(()=>scrollY)).toBeGreaterThan(20);await cdp.detach();
  }
  await start(page);
- async function fit(){
-  for(const canvas of await page.locator('canvas').all()){
-   const box=(await canvas.boundingBox())!;expect(box.width).toBeGreaterThan(80);expect(Math.abs(box.width-box.height)).toBeLessThan(1);
-   expect(box.x).toBeGreaterThanOrEqual(-1);expect(box.y).toBeGreaterThanOrEqual(-1);expect(box.x+box.width).toBeLessThanOrEqual(viewport.width+1);expect(box.y+box.height).toBeLessThanOrEqual(viewport.height+1);
-  }
-  for(const name of ['메인으로 돌아가기','힌트 1']){const box=(await page.getByRole('button',{name,exact:true}).boundingBox())!;expect(box.y).toBeGreaterThanOrEqual(0);expect(box.y+box.height).toBeLessThanOrEqual(viewport.height+1)}
-  expect(await page.evaluate(()=>document.documentElement.scrollHeight<=innerHeight+1&&document.documentElement.scrollWidth<=innerWidth)).toBe(true);
- }
- await fit();expect(await page.locator('canvas').first().evaluate(e=>getComputedStyle(e).touchAction)).toContain('pan-y');
- const a=(await page.locator('canvas').first().boundingBox())!,b=(await page.locator('canvas').nth(1).boundingBox())!;
+ for(const label of ['확대·이동','찾기로 전환','확대','축소'])await expect(page.getByRole('button',{name:label,exact:true})).toHaveCount(0);
+ const canvas=page.locator('canvas').first(),a=(await canvas.boundingBox())!,b=(await page.locator('canvas').nth(1).boundingBox())!;
+ for(const box of [a,b]){expect(Math.abs(box.width-box.height)).toBeLessThan(1);expect(box.x).toBeGreaterThanOrEqual(0);expect(box.y).toBeGreaterThanOrEqual(0);expect(box.x+box.width).toBeLessThanOrEqual(viewport.width+1);expect(box.y+box.height).toBeLessThanOrEqual(viewport.height+1)}
  if(viewport.height>viewport.width)expect(b.y).toBeGreaterThanOrEqual(a.y+a.height);else expect(b.x).toBeGreaterThanOrEqual(a.x+a.width);
- await page.getByRole('button',{name:'확대·이동',exact:true}).click();await fit();
- await page.getByRole('button',{name:'확대',exact:true}).click();await expect(page.getByLabel('배율',{exact:true})).toHaveText('125%');
- expect(await page.locator('canvas').first().evaluate(e=>getComputedStyle(e).touchAction)).toBe('none');
- const canvas=page.locator('canvas').first(),box=(await canvas.boundingBox())!;await page.mouse.move(box.x+box.width*.7,box.y+box.height*.7);await page.mouse.down();await page.mouse.move(box.x+box.width*.3,box.y+box.height*.3,{steps:8});await page.mouse.up();
+ if(viewport.width/viewport.height>2&&viewport.height<=600)expect(a.width).toBeGreaterThan(viewport.height*.9);
+ for(const name of ['메인으로 돌아가기','힌트 1']){const box=(await page.getByRole('button',{name,exact:true}).boundingBox())!;expect(box.y).toBeGreaterThanOrEqual(0);expect(box.y+box.height).toBeLessThanOrEqual(viewport.height+1)}
+ expect(await page.evaluate(()=>document.documentElement.scrollHeight<=innerHeight+1&&document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ const x=a.x+a.width*answers[0].x,y=a.y+a.height*answers[0].y;
+ if(viewport.width===1280){await page.mouse.move(x,y);await page.mouse.wheel(0,-450)}else{
+  const cdp=await page.context().newCDPSession(page),r=a.width*.05;
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:x-r,y,id:1},{x:x+r,y,id:2}]});
+  for(let i=1;i<=8;i++){const d=r*(1+i*.2);await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x-d,y,id:1},{x:x+d,y,id:2}]})}
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await cdp.detach();
+ }
+ await expect.poll(async()=>Number(await canvas.getAttribute('data-zoom'))).toBeGreaterThan(1.5);
+ const zoom=await canvas.getAttribute('data-zoom');await expect(page.locator('canvas').nth(1)).toHaveAttribute('data-zoom',zoom!);
  await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow','0');
- await page.getByRole('button',{name:'찾기로 전환',exact:true}).click();await fit();
- await page.getByRole('button',{name:'플레이 메뉴',exact:true}).click();await expect(page.getByRole('dialog')).toBeVisible();
+ await page.mouse.click(x,y);await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow','1');await expect(canvas).toHaveAttribute('data-zoom',zoom!);
+ await page.mouse.move(a.x+a.width*.7,a.y+a.height*.7);await page.mouse.down();await page.mouse.move(a.x+a.width*.3,a.y+a.height*.3,{steps:8});await page.mouse.up();
+ await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow','1');
+ await page.getByRole('button',{name:'플레이 메뉴',exact:true}).click();await expect(page.getByRole('dialog')).toBeVisible();await expect(page.getByText(/^오답 0회 · 최고/)).toBeVisible();
  await page.getByRole('button',{name:'계속 찾기',exact:true}).click();await expect(page.getByRole('dialog')).not.toBeVisible();
  await page.getByRole('button',{name:'메인으로 돌아가기',exact:true}).click();await expect(page.locator('canvas')).toHaveCount(0);
+});
+
+async function pictureMetrics(page:import('@playwright/test').Page){return page.locator('canvas').first().evaluate(e=>{
+ const c=e as HTMLCanvasElement,ctx=c.getContext('2d')!,data=ctx.getImageData(0,0,c.width,c.height).data;
+ const rgb=(x:number,y:number)=>{const i=(Math.floor(y*c.height)*c.width+Math.floor(x*c.width))*4;return [data[i],data[i+1],data[i+2]]};
+ let checksum=0;for(let i=0;i<data.length;i+=4)checksum=((checksum<<5)-checksum+data[i])|0;
+ return {corner:rgb(.05,.05).reduce((a,b)=>a+b,0),center:rgb(.5,.32),checksum};
+})}
+
+test('hint dims surroundings, preserves target brightness, pulses and clears',async({page})=>{
+ await page.goto('/');await start(page);await page.evaluate(()=>{Math.random=()=>0});const before=await pictureMetrics(page);
+ await page.getByRole('button',{name:'힌트 1',exact:true}).click();
+ await expect.poll(async()=>(await pictureMetrics(page)).corner).toBeLessThan(before.corner*.4);
+ const highlighted=await pictureMetrics(page);expect(highlighted.center).toEqual(before.center);
+ await expect.poll(async()=>(await pictureMetrics(page)).checksum).not.toBe(highlighted.checksum);
+ await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow','0');
+ await expect.poll(async()=>(await pictureMetrics(page)).corner,{timeout:5000}).toBeGreaterThan(before.corner*.9);
+ await expect(page.getByRole('button',{name:'힌트 0',exact:true})).toBeDisabled();
+});
+
+test('reduced-motion hint remains bright and static',async({page})=>{
+ await page.emulateMedia({reducedMotion:'reduce'});await page.goto('/');await start(page);await page.evaluate(()=>{Math.random=()=>0});const before=await pictureMetrics(page);
+ await page.getByRole('button',{name:'힌트 1',exact:true}).click();await expect.poll(async()=>(await pictureMetrics(page)).corner).toBeLessThan(before.corner*.4);
+ const first=await pictureMetrics(page);await page.waitForTimeout(200);const second=await pictureMetrics(page);
+ expect(second.checksum).toBe(first.checksum);expect(second.center).toEqual(before.center);
+});
+
+test('hint recenters an offscreen answer and remains selectable while zoomed',async({page})=>{
+ await page.goto('/');await start(page);await page.evaluate(()=>{Math.random=()=>0});
+ const canvas=page.locator('canvas').first(),b=(await canvas.boundingBox())!;
+ await page.mouse.move(b.x+b.width*.9,b.y+b.height*.9);await page.mouse.wheel(0,-3000);
+ await expect.poll(async()=>Number(await canvas.getAttribute('data-zoom'))).toBeGreaterThan(3);
+ await page.getByRole('button',{name:'힌트 1',exact:true}).click();
+ await expect.poll(async()=>Number(await canvas.getAttribute('data-zoom'))).toBeGreaterThan(1.9);
+ await page.mouse.click(b.x+b.width*.5,b.y+b.height*.5);
+ await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow','1');
+ await expect(page.getByText('정답!',{exact:true})).toBeVisible();
 });

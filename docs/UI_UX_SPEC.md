@@ -5,3 +5,7 @@
 The main screen has a photo banner, three-column mobile thumbnail grid, real progress filters, mode selection, records and settings/backup. Locked stages show their unlock condition. Daily/travel navigation is not shown until those features exist.
 The dark play screen reserves space for Back/menu, two full square pictures and bottom progress/hint controls. Portrait stacks the pictures; landscape uses side-by-side frames. Sizes follow dynamic viewport height and safe-area insets without cropping or stretching. Smaller viewports may require narrower images to keep both pictures and controls visible.
 Touch scroll is allowed by default. An explicit Explore switch enables synchronized zoom/pan; switching back resets the view. Dragging cannot submit answers in Explore mode. Local practice timers pause on the menu and stop in the lobby.
+
+## Updated gesture and hint behavior
+Play no longer has an Explore switch or zoom buttons. Pinch/wheel zoom and drag work immediately; taps remain active at the current zoom. The lobby retains native vertical scrolling. Compact landscape screens use side rails for controls to maximize picture height. Keyboard +/−/0 zooms or resets the view.
+A free hint lasts three seconds: surroundings are dimmed, the target stays bright, and a white glowing circle breathes with an outward ripple. Offscreen targets are brought into view. Motion reduction keeps the spotlight static. A correct tap immediately removes the spotlight.
