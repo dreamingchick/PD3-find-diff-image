@@ -7,6 +7,11 @@ test('clear, mode stars, backup and corrupt import preserve practice records',as
   const canvas=page.locator('canvas').nth(i%2);await canvas.scrollIntoViewIfNeeded();const box=(await canvas.boundingBox())!;
   await page.mouse.click(box.x+box.width*a.x,box.y+box.height*a.y);await expect(page.locator('.controls strong').first()).toContainText((i+1)+'/5');
  }
+ const frame=await page.locator('canvas').first().boundingBox();
+ const viewport=page.viewportSize()!;
+ expect(Math.abs(frame!.width-frame!.height)).toBeLessThan(1);
+ if(viewport.width<=600){expect(frame!.width).toBeGreaterThanOrEqual(viewport.width*.9)}
+ else{const second=await page.locator('canvas').nth(1).boundingBox();expect(Math.abs(frame!.y-second!.y)).toBeLessThan(1);expect(second!.x).toBeGreaterThan(frame!.x+frame!.width)}
  await expect(page.getByRole('region',{name:'클리어 결과'})).toBeVisible();
  await expect(page.getByText('누적 별 3 / 3',{exact:false})).toBeVisible();
  const downloadPromise=page.waitForEvent('download');await page.getByRole('button',{name:'백업 다운로드'}).click();const download=await downloadPromise;
