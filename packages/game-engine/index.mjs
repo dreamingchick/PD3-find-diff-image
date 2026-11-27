@@ -1,0 +1,2 @@
+export const answers=[{id:1,x:.50,y:.32,r:.13},{id:2,x:.83,y:.14,r:.08},{id:3,x:.63,y:.55,r:.065},{id:4,x:.17,y:.62,r:.08},{id:5,x:.83,y:.84,r:.08}];
+export function judge(x,y,found,regions=answers){if(!Number.isFinite(x)||!Number.isFinite(y)||x<0||x>1||y<0||y>1)return {kind:"invalid"};const a=regions.find(a=>Math.hypot(x-a.x,y-a.y)<=a.r);return a?{kind:found.includes(a.id)?"duplicate":"correct",id:a.id}:{kind:"wrong"};}
