@@ -1,0 +1,1 @@
+export const answers: {id:number;x:number;y:number;r:number}[]; export function judge(x:number,y:number,found:number[],regions?:typeof answers): {kind:"invalid"|"correct"|"duplicate"|"wrong";id?:number};
