@@ -1,16 +1,16 @@
 "use client";
 import {useEffect,useRef} from "react";
 import type {PointerEvent as PE} from "react";
-import {answers,clampView,zoomView,imagePoint} from "../../../packages/game-engine/index.mjs";
-import type {View} from "../../../packages/game-engine/index.mjs";
-type Props={side:number;view:View;setView:(v:View)=>void;found:number[];hint:number|null;onHit:(x:number,y:number,side:number)=>void;onReady:(side:number,ok:boolean)=>void};
-export default function PuzzleCanvas({side,view,setView,found,hint,onHit,onReady}:Props){
+import {clampView,zoomView,imagePoint} from "../../../packages/game-engine/index.mjs";
+import type {View,Answer} from "../../../packages/game-engine/index.mjs";
+type Props={source:string;answers:Answer[];side:number;view:View;setView:(v:View)=>void;found:number[];hint:number|null;onHit:(x:number,y:number,side:number)=>void;onReady:(side:number,ok:boolean)=>void};
+export default function PuzzleCanvas({source,answers,side,view,setView,found,hint,onHit,onReady}:Props){
  const ref=useRef<HTMLCanvasElement>(null),img=useRef<HTMLImageElement|null>(null),current=useRef(view);
  const pointers=useRef(new Map<number,{x:number;y:number}>()),moved=useRef(false),start=useRef({x:0,y:0});
  current.current=view;
- useEffect(()=>{const image=new Image();let active=true;image.onload=()=>{if(active){img.current=image;onReady(side,true);draw()}};image.onerror=()=>{if(active)onReady(side,false)};image.src="/samples/"+(side?"modified":"original")+".svg";return()=>{active=false;img.current=null}},[side]);
+ useEffect(()=>{const image=new Image();let active=true;image.onload=()=>{if(active){img.current=image;onReady(side,true);draw()}};image.onerror=()=>{if(active)onReady(side,false)};image.src=source;return()=>{active=false;img.current=null}},[side,source]);
  function draw(){const c=ref.current;if(!c)return;const b=c.getBoundingClientRect(),d=window.devicePixelRatio||1;const size=Math.max(1,Math.round(b.width*d));if(c.width!==size||c.height!==size){c.width=size;c.height=size}const ctx=c.getContext("2d");if(!ctx)return;ctx.clearRect(0,0,size,size);if(!img.current)return;ctx.save();ctx.scale(size,size);ctx.translate(view.x,view.y);ctx.scale(view.z,view.z);ctx.drawImage(img.current,0,0,1,1);for(const a of answers){if(!found.includes(a.id)&&hint!==a.id)continue;ctx.beginPath();ctx.arc(a.x,a.y,a.r+(hint===a.id?.02:0),0,Math.PI*2);ctx.lineWidth=2/(size*view.z);ctx.strokeStyle=found.includes(a.id)?"#166534":"#a16207";ctx.setLineDash(found.includes(a.id)?[]:[5/(size*view.z),3/(size*view.z)]);ctx.stroke()}ctx.restore()}
- useEffect(()=>{draw();const c=ref.current;if(!c)return;const ro=new ResizeObserver(draw);ro.observe(c);return()=>ro.disconnect()},[view,found,hint]);
+ useEffect(()=>{draw();const c=ref.current;if(!c)return;const ro=new ResizeObserver(draw);ro.observe(c);return()=>ro.disconnect()},[view,found,hint,answers]);
  useEffect(()=>{const c=ref.current;if(!c)return;const wheel=(e:WheelEvent)=>{e.preventDefault();const b=c.getBoundingClientRect(),v=current.current;setView(zoomView(v,v.z*Math.exp(-e.deltaY*.002),(e.clientX-b.left)/b.width,(e.clientY-b.top)/b.height))};c.addEventListener("wheel",wheel,{passive:false});return()=>c.removeEventListener("wheel",wheel)},[setView]);
  function point(e:PE<HTMLCanvasElement>){const b=e.currentTarget.getBoundingClientRect();return {x:(e.clientX-b.left)/b.width,y:(e.clientY-b.top)/b.height}}
  function down(e:PE<HTMLCanvasElement>){if(e.button!==0)return;e.currentTarget.setPointerCapture(e.pointerId);const p=point(e);if(!pointers.current.size){moved.current=false;start.current=p}else moved.current=true;pointers.current.set(e.pointerId,p)}
