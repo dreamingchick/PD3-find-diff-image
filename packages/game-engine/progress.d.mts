@@ -1,0 +1,11 @@
+import type {RecordSet} from './rewards.mjs';
+export type Progress={records:Record<string,RecordSet>;sessions:Record<string,{found:number[];wrong:number;used:boolean;elapsed:number}>};
+type Stage={id:string;requiredStars?:number;answers:{id:number}[]};
+export function emptyProgress():Progress;
+export function validateProgress(value:unknown):Progress;
+export function backup(value:Progress):string;
+export function restore(text:string):Progress;
+export function stageStars(records:Progress['records'],id:string):number;
+export function totalStars(records:Progress['records'],stages:{id:string}[]):number;
+export function unlocked(records:Progress['records'],stages:Stage[],id:string):boolean;
+export function resumeSession(progress:Progress,stage:Stage):Progress['sessions'][string]|undefined;

@@ -17,9 +17,13 @@ jobs:
       - name: Engine unit tests
         run: npm test
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
       - name: Next.js build
         run: npm run build
+      - name: Install browser
+        run: npx playwright install --with-deps chromium
+      - name: Desktop and mobile player journeys
+        run: npm run test:e2e
   image-qa:
     runs-on: ubuntu-latest
     timeout-minutes: 10

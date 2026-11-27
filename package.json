@@ -9,6 +9,10 @@
   "scripts": {
     "dev": "npm run dev -w @pd3/player",
     "build": "npm run build -w @pd3/player",
-    "test": "node --test packages/game-engine/*.test.mjs"
+    "test": "node --test packages/game-engine/*.test.mjs",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.1"
   }
 }
