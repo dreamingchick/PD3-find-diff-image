@@ -34,7 +34,7 @@ test('keyboard play, home and browser reload preserve normal progress',async({pa
  await page.getByRole('button',{name:'메인으로 돌아가기',exact:true}).click();
  await expect(page.getByRole('button',{name:'이어서 찾기',exact:false})).toBeVisible();
  await expect.poll(()=>page.evaluate(async()=>{
-  const db=await new Promise<IDBDatabase>((resolve,reject)=>{const r=indexedDB.open('pd3-progress',1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});
+  const db=await new Promise<IDBDatabase>((resolve,reject)=>{const r=indexedDB.open('pd3-progress');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});
   try{return await new Promise<number>(resolve=>{const r=db.transaction('state').objectStore('state').get('progress');r.onsuccess=()=>resolve(r.result?.sessions['sample-001']?.found.length??0)})}finally{db.close()}
  })).toBe(1);
  await page.reload();await page.getByRole('button',{name:'이어서 찾기',exact:false}).click();
@@ -108,6 +108,7 @@ test('hint recenters an offscreen answer and remains selectable while zoomed',as
  await page.mouse.move(b.x+b.width*.9,b.y+b.height*.9);await page.mouse.wheel(0,-3000);
  await expect.poll(async()=>Number(await canvas.getAttribute('data-zoom'))).toBeGreaterThan(3);
  await page.getByRole('button',{name:'힌트 1',exact:true}).click();
+ await expect(page.getByText('밝은 원 안의 차이를 찾아보세요.',{exact:true})).toBeVisible();
  await expect.poll(async()=>Number(await canvas.getAttribute('data-zoom'))).toBeGreaterThan(1.9);
  await page.mouse.click(b.x+b.width*.5,b.y+b.height*.5);
  await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow','1');

@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {emptyProgress,backup,restore,stageStars,totalStars,unlocked,resumeSession} from './progress.mjs';
+import {emptyProgress,validateProgress,backup,restore,stageStars,totalStars,unlocked,resumeSession} from './progress.mjs';
 const entry={score:3000,stars:2,elapsed:30,wrong:1,hints:0};
 const record={first:entry,best:entry,recent:entry,maxStars:2};
 const stages=[{id:'a',answers:[{id:1}]},{id:'b',answers:[{id:1}]},{id:'c',requiredStars:5,answers:[]}];
@@ -13,7 +13,9 @@ test('mode stars count once; sequence and star requirements both apply',()=>{
 });
 test('backup round trip preserves records and unfinished normal sessions',()=>{
  const p={records:{'a:normal':record},sessions:{a:{found:[1],wrong:2,elapsed:12,used:true}}};
- assert.deepEqual(restore(backup(p)),p);
+ const upgraded=validateProgress(p);assert.deepEqual(restore(backup(p)),upgraded);
+ assert.deepEqual(restore(JSON.stringify({format:"pd3-progress",version:1,progress:p})),upgraded);
+ assert.equal(upgraded.wallet.coins,100);assert.equal(upgraded.wallet.xp,60);assert.deepEqual(upgraded.wallet.claimed,["a"]);assert.equal(upgraded.sessions.a.hints,1);
  assert.deepEqual(resumeSession(p,{id:'a',answers:[{id:2}]}).found,[]);
 });
 test('reject corrupt, future, oversized and prototype-polluting backups',()=>{

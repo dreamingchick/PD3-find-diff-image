@@ -14,3 +14,10 @@
 - M3: chapter labels, sequential unlock with configurable star requirements, IndexedDB restoration, validated portable local backup, keyboard aiming and visible focus implemented. Broader accessibility review remains.
 - M7: growth/collection/mission systems remain unimplemented; no final economy values selected.
 - Release and paid service approval remains required.
+
+## Growth increment — 2026-11-28
+- Current three-stage private playtest accepted by the user.
+- Basic growth/rewards implemented: stage-level first claims, coins, total EXP/derived levels, stock hints and exchange. Values remain provisional.
+- Local persistence/backup upgraded compatibly; concurrent reward and debit boundaries covered by browser tests.
+- This supersedes the earlier note that all growth work was unimplemented. Collections, missions, repeat-reward caps and challenge continues remain pending.
+- Next content-production milestone: private Studio stage/answer editing and validation. Public release still needs separate approval.

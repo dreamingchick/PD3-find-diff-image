@@ -3,10 +3,11 @@ import {useState} from "react";
 import {stageStars,totalStars,unlocked} from "../../../packages/game-engine/progress.mjs";
 import {stages} from "./stages";
 import BackupControls from "./BackupControls";
+import GrowthPanel from "./GrowthPanel";
 import type {Progress} from "./storage";
 
-type Props={progress:Progress;hydrated:boolean;storageError:boolean;mode:string;onMode:(mode:string)=>void;onStart:(id:string,mode:string)=>void;onRestore:(p:Progress)=>void};
-export default function StageLobby({progress,hydrated,storageError,mode,onMode,onStart,onRestore}:Props){
+type Props={progress:Progress;hydrated:boolean;storageError:boolean;mode:string;onMode:(mode:string)=>void;onStart:(id:string,mode:string)=>void;onRestore:(p:Progress)=>Promise<void>;onProgress:(p:Progress)=>void};
+export default function StageLobby({progress,hydrated,storageError,mode,onMode,onStart,onRestore,onProgress}:Props){
  const [tab,setTab]=useState("main"),[filter,setFilter]=useState("all");
  const stars=totalStars(progress.records,stages),won=stages.filter(s=>stageStars(progress.records,s.id)>0).length;
  const visible=stages.filter(s=>filter==="all"||(filter==="won"?stageStars(progress.records,s.id)>0:stageStars(progress.records,s.id)===0));
@@ -14,6 +15,7 @@ export default function StageLobby({progress,hydrated,storageError,mode,onMode,o
  const next=resume??stages.find(s=>unlocked(progress.records,stages,s.id)&&stageStars(progress.records,s.id)===0)??stages[0];
  return <main className="lobby">
   <header className="lobby-header"><a className="brand" href="#" onClick={e=>{e.preventDefault();setTab("main")}}>PD3<span>그림 속 작은 발견</span></a><span className="star-total" aria-label={`누적 별 ${stars} / ${stages.length*3}`}>★ {stars}<small> / {stages.length*3}</small></span><button className="icon-button" aria-label="설정 열기" onClick={()=>setTab("settings")}>⚙</button></header>
+  <GrowthPanel progress={progress} onChange={onProgress} disabled={!hydrated}/>
   {tab==="main"&&<>
    <section className="lobby-hero" aria-label="그림 속 작은 발견"><img src={stages[0].images[0]} alt=""/><div><span className="eyebrow">A LITTLE MOMENT OF DISCOVERY</span><h1>천천히 보고,<br/>작은 차이를 발견해요.</h1><p>나만의 속도로 즐기는 틀린그림찾기</p><button disabled={!hydrated} onClick={()=>onStart(next.id,mode)}>{resume&&mode==="normal"?"이어서 찾기":"그림 찾기 시작"} <span aria-hidden="true">↗</span></button></div></section>
    <section className="stage-section" aria-label="스테이지 목록">
