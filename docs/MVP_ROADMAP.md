@@ -51,3 +51,10 @@
 - M4: dedicated backend, active administrator membership, real Auth sign-in, managed policies and private worker connection verified; synthetic live API lifecycle assertions passed and test residue was cleaned separately.
 - Approved hosted reviews can be explicitly exported as revalidated private snapshots. They remain pending under the local vault/catalog authority model; automatic authority transfer and web activation remain unfinished.
 - Live browser button flow remains unverified due the desktop browser tool limitation. No milestone or release is marked complete.
+
+## Discovery collection increment — 2026-11-28
+
+- M7: initial seven cosmetic badges and collection progress implemented from retained local records, with a lobby entry and collection tab.
+- No additional rewards or persistence schema; current backup restoration determines the collection. Missions, collectible item inventory, repeat reward caps and server rankings remain pending.
+- Does not complete M7 or authorize production publication.
+
