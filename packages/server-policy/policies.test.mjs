@@ -86,3 +86,9 @@ test('only the worker can read the unfinished validation queue, excluding incomp
  await assert.rejects(()=>db.query('select * from public.pd3_pending_validation(10)'));await as(R);await assert.rejects(()=>db.query('select * from public.pd3_pending_validation(10)'));
  await as(null,'service_role');assert.deepEqual((await db.query('select digest from public.pd3_pending_validation(10)')).rows.map(r=>r.digest),[a.digest]);await validate(a);assert.equal((await db.query('select digest from public.pd3_pending_validation(10)')).rows.length,0);
 });
+test('managed staging probe checks real role boundaries and rolls back every synthetic fixture',async()=>{
+ await db.exec('reset role');const before=(await db.query('select count(*)::int as n from auth.users')).rows[0].n;
+ const results=await db.exec(await readFile(new URL('../../supabase/tests/staging_policy_probe.sql',import.meta.url),'utf8'));
+ const report=results.at(-1).rows[0].verification;assert.equal(report.passed,true,JSON.stringify(report));assert.equal(report.fixtures_rolled_back,true);
+ assert.equal((await db.query('select count(*)::int as n from auth.users')).rows[0].n,before);assert.equal((await db.query('select count(*)::int as n from public.pd3_review_requests')).rows[0].n,0);
+});
