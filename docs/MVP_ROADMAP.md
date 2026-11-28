@@ -39,3 +39,9 @@
 - M4: approved revisions can form ordered private staging build catalogs, with checked activation/rollback and a selected-catalog build input in PD3-assets.
 - Local unfinished sessions are pinned to content versions; revision changes preserve historical progression and rewards while resetting stale answer positions.
 - Private operator tooling is implemented. Server identity/roles/storage, web activation and production publication remain pending; M4 is not complete.
+
+## Web review backend increment — 2026-11-28
+
+- M4: administrator inbox UI, Auth/Storage/Postgres adapter, enforceable role/ownership policies, worker-only image QA and immutable authenticated review decisions implemented.
+- Dedicated hosted project, account/membership bootstrap, worker secret and real managed-service login/policy verification remain setup requirements. Unconfigured staging stays explicit; local policy tests and mocked auth flows are not a claim of hosted activation.
+- Editable-draft cloud autosave, web catalog activation, public publication and broader M4/release approval remain pending.

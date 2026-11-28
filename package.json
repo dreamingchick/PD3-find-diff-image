@@ -10,9 +10,12 @@
     "dev": "npm run dev -w @pd3/player",
     "build": "npm run build -w @pd3/player",
     "test": "node --test packages/game-engine/*.test.mjs packages/studio-core/*.test.mjs",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:server": "node --test packages/server-policy/*.test.mjs",
+    "test:worker": "node --test scripts/validate-inbox.test.mjs"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.6.1",
     "@playwright/test": "1.65.1"
   }
 }

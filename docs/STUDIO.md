@@ -22,7 +22,7 @@ Change types are add, remove, color, size, move, rotate, shape, detail and count
 
 Only the same rectangle on both images is editable in this increment. Unequal per-side boxes and nonrectangular regions are rejected rather than converted silently. Circular sample targets can be initialized as bounded pixel rectangles and must pass QA again.
 
-Server draft storage, administrator roles beyond staging SSO, server approval workflows, runtime publication, polygon/circle editing, image generation and production deployment remain pending. Keep whole-project authentication enabled for staging, including `/studio`, static assets and exported route files. Public release needs separate approval.
+Hosted administrator provisioning and live-login verification, server autosave of editable drafts, web catalog activation, polygon/circle editing, image generation and production deployment remain pending. The web review inbox and server authorization adapter are described below. Keep whole-project authentication enabled for staging, including Studio, review pages and assets. Public release needs separate approval.
 
 ## Review requests and private staging bundles
 
@@ -36,10 +36,18 @@ Synthetic tests cover the review boundary, including actual concurrent decision 
 
 Approved revisions can now be assembled into an ordered private staging catalog, selected with a current-event concurrency check, rolled back to the previous valid release, and exported into private player build inputs. Every boundary rechecks the approval, stage metadata and image bytes. PD3-assets connects this to its build/QA workflow. Selection affects the next build; the protected live deployment changes only after build/QA/deployment. See [CATALOG.md](../workers/content-review/CATALOG.md).
 
-The player preserves optional content versions in unfinished sessions/backups and resumes only a matching revision. Updating or rolling back content resets stale found-answer positions while preserving historical records, stars and stage-wide first rewards. Legacy unversioned content retains compatible restoration. Server identity/roles, durable server storage and web-based activation remain pending.
+The player preserves optional content versions in unfinished sessions/backups and resumes only a matching revision. Updating or rolling back content resets stale found-answer positions while preserving historical records, stars and stage-wide first rewards. Legacy unversioned content retains compatible restoration. Hosted administrator setup and web-based catalog activation remain pending; the inbox adapter below implements the server permission contracts.
+
+## Web administrator review inbox
+
+`/studio/reviews` implements password login for pre-registered administrator accounts, role-aware request listing, private image downloads/previews, resumable immutable uploads and checked-only approval/rejection with authenticated actor IDs. The Supabase migration enforces roles, ownership, immutable content/decisions, exact image paths and worker-only pixel receipts. Editable drafts still autosave locally; submitted review requests/images use the backend adapter. No player signup is added.
+
+The trusted validation adapter reconstructs private packages and calls the independent Python validator; browser QA claims cannot authorize approval. The browser uses only a publishable key and never receives worker secrets. Decisions do not automatically activate a catalog or deploy a site.
+
+Dedicated project creation, initial account/membership bootstrap, worker-secret connection and real hosted login verification remain setup requirements. Without validated private build configuration, the deployed page explicitly displays “서버 연결 준비 중”. Local embedded-Postgres policy tests and synthetic HTTP browser tests do not imply a live account has been provisioned. See [backend setup and trust boundaries](../supabase/README.md).
 
 ## Verification
 
-Validation includes 34 Node tests, 68 browser cases, 14 review/catalog Python tests and 3 image-pipeline tests. Private QA additionally compiles and plays a generated catalog after A → B → rollback A, then restores the actual build input. No real content receives synthetic approval.
+Validation includes 37 core Node tests, 9 real PostgreSQL grant/RLS cases in an embedded instance, 84 browser cases, 2 worker/real-Python adapter cases, 14 review/catalog Python tests and 3 image-pipeline tests. Private QA additionally compiles and plays a generated catalog after A → B → rollback A, then restores the actual build input. No real content receives synthetic approval. Hosted login and managed-project policy installation are verified separately after setup.
 
 Coverage includes overlap/bounds, normalized judgment, chunked comparison/heatmaps, transparency/outside changes, defensive parsing and ownership of parsed data. Browser cases cover mouse/touch drawing, import/export, image digest mismatch, QA invalidation, autosave/reload, confirmed deletion and test-play isolation across four viewports. Existing game and economy cases remain in the full suite. Private image integration is checked independently in PD3-assets.
