@@ -21,3 +21,9 @@
 - Local persistence/backup upgraded compatibly; concurrent reward and debit boundaries covered by browser tests.
 - This supersedes the earlier note that all growth work was unimplemented. Collections, missions, repeat-reward caps and challenge continues remain pending.
 - Next content-production milestone: private Studio stage/answer editing and validation. Public release still needs separate approval.
+
+## Studio increment — 2026-11-28
+
+- M4 local authoring implemented at `/studio`: image pairs, linked rectangular regions, metadata, pixel QA, independent test play, local drafts and private package exchange.
+- Existing catalog entries are copied into drafts; the editor does not publish or change runtime stages. Separate server roles, storage, approval and publication remain pending.
+- See STUDIO.md for supported geometry, privacy boundaries and validation. Keep all staging paths under authentication. This does not complete M4 or authorize public release.

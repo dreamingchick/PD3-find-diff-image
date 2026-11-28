@@ -28,7 +28,7 @@ export default function StageLobby({progress,hydrated,storageError,mode,onMode,o
    <p className="qa-note">앞 그림을 완성하면 다음 이야기가 열려요.</p>
   </>}
   {tab==="records"&&<section className="lobby-panel"><span className="eyebrow">YOUR DISCOVERIES</span><h1>나의 발견 기록</h1><p>그림 {won} / {stages.length}개 완성 · 누적 별 {stars}개</p><div className="record-list">{stages.map(s=><article key={s.id}><img src={s.images[0]} alt=""/><div><h2>{s.title}</h2>{["normal","challenge"].map(m=>{const r=progress.records[s.id+":"+m];return <p key={m}>{m==="normal"?"일반":"도전"} · {r?`${r.best.score.toLocaleString()}점 · ${r.maxStars}성`:"아직 기록이 없어요"}</p>})}</div></article>)}</div></section>}
-  {tab==="settings"&&<section className="lobby-panel"><span className="eyebrow">YOUR SPACE</span><h1>설정과 진행 보관</h1><p>그림을 터치해 정답을 찾으세요. 두 손가락 또는 휠로 바로 확대하고, 확대한 그림을 끌어 이동할 수 있어요.</p><BackupControls progress={progress} onRestore={onRestore} disabled={!hydrated}/></section>}
+  {tab==="settings"&&<section className="lobby-panel"><span className="eyebrow">YOUR SPACE</span><h1>설정과 진행 보관</h1><p>그림을 터치해 정답을 찾으세요. 두 손가락 또는 휠로 바로 확대하고, 확대한 그림을 끌어 이동할 수 있어요.</p><a className="studio-entry" href="/studio">콘텐츠 스튜디오 열기 <span aria-hidden="true">↗</span></a><BackupControls progress={progress} onRestore={onRestore} disabled={!hydrated}/></section>}
   {!hydrated&&<p role="status">진행을 불러오는 중이에요.</p>}{storageError&&<p role="alert">브라우저 저장을 사용할 수 없습니다. 기록이 보존되지 않을 수 있습니다.</p>}
   <nav className="lobby-nav" aria-label="메인 메뉴">{[["main","▦","메인"],["records","☆","내 기록"],["settings","⚙","설정"]].map(([value,icon,label])=><button key={value} aria-current={tab===value?"page":undefined} onClick={()=>{setTab(value);window.scrollTo({top:0})}}><span aria-hidden="true">{icon}</span>{label}</button>)}</nav>
  </main>;
