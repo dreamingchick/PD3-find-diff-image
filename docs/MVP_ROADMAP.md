@@ -45,3 +45,9 @@
 - M4: administrator inbox UI, Auth/Storage/Postgres adapter, enforceable role/ownership policies, worker-only image QA and immutable authenticated review decisions implemented.
 - Dedicated hosted project, account/membership bootstrap, worker secret and real managed-service login/policy verification remain setup requirements. Unconfigured staging stays explicit; local policy tests and mocked auth flows are not a claim of hosted activation.
 - Editable-draft cloud autosave, web catalog activation, public publication and broader M4/release approval remain pending.
+
+## Hosted export increment — 2026-11-28
+
+- M4: dedicated backend, active administrator membership, real Auth sign-in, managed policies and private worker connection verified; synthetic live API lifecycle assertions passed and test residue was cleaned separately.
+- Approved hosted reviews can be explicitly exported as revalidated private snapshots. They remain pending under the local vault/catalog authority model; automatic authority transfer and web activation remain unfinished.
+- Live browser button flow remains unverified due the desktop browser tool limitation. No milestone or release is marked complete.
