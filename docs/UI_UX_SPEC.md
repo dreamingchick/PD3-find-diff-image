@@ -1,2 +1,11 @@
 # UI/UX
 동화책 로비/미니멀 플레이, 공통 색상과 챕터 보조색, 라이트/다크/시스템. 모바일 하단 탭, PC 상단 또는 측면. 로비 이어하기/챕터/자유/일일. 카드형 챕터, 썸네일/번호/별/난이도/잠금 스테이지. 최근 모드 기억. 모바일 세로 상하, PC/가로 좌우, 수동 전환, 지원 환경 전체화면. 진행 숫자+아이콘, 일반 시간 숨김 가능. 핀치/휠/버튼/초기화, 가변 줌 한도, 동기 이동. 정답 원/체크/음, 오답 X/음/진동/시간 표시, 중복 마커 강조, 힌트 펄스 3초. 배경음/효과음 별도, 고대비/색각/글자/모션 감소/키보드 지원. 튜토리얼, 한국어/영어. 양쪽 이미지 로드 완료 후 시작, 재시도 및 상태 보호. 일반 도전 제한적 일시정지, 랭킹 타이머 지속.
+
+## Implemented lobby and play separation
+The main screen has a photo banner, three-column mobile thumbnail grid, real progress filters, mode selection, records and settings/backup. Locked stages show their unlock condition. Daily/travel navigation is not shown until those features exist.
+The dark play screen reserves space for Back/menu, two full square pictures and bottom progress/hint controls. Portrait stacks the pictures; landscape uses side-by-side frames. Sizes follow dynamic viewport height and safe-area insets without cropping or stretching. Smaller viewports may require narrower images to keep both pictures and controls visible.
+Touch scroll is allowed by default. An explicit Explore switch enables synchronized zoom/pan; switching back resets the view. Dragging cannot submit answers in Explore mode. Local practice timers pause on the menu and stop in the lobby.
+
+## Updated gesture and hint behavior
+Play no longer has an Explore switch or zoom buttons. Pinch/wheel zoom and drag work immediately; taps remain active at the current zoom. The lobby retains native vertical scrolling. Compact landscape screens use side rails for controls to maximize picture height. Keyboard +/−/0 zooms or resets the view.
+A free hint lasts three seconds: surroundings are dimmed, the target stays bright, and a white glowing circle breathes with an outward ripple. Offscreen targets are brought into view. Motion reduction keeps the spotlight static. A correct tap immediately removes the spotlight.
