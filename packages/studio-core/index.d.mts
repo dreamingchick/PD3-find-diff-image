@@ -1,0 +1,16 @@
+import type {Answer} from '../game-engine/index.mjs';
+export type Level='easy'|'normal'|'hard';
+export type ChangeType='unclassified'|'add'|'remove'|'color'|'size'|'move'|'rotate'|'shape'|'detail'|'count';
+export type Region={id:number;box:[number,number,number,number];difficulty:Level;changeType:ChangeType};
+export type Draft={id:string;title:string;chapter:string;notes:string;difficulty:Level;limit:number;resolution:number;regions:Region[]};
+export type Issue={code:string;message:string};
+export type Scan={outsideChanged:number;totalChanged:number;transparent:number;regionChanged:number[]};
+export const LEVELS:Level[];
+export const CHANGE_TYPES:ChangeType[];
+export const REQUIRED:Record<Level,number>;
+export function parseDraft(v:unknown):Draft;
+export function validateDraft(v:unknown):{errors:Issue[];warnings:Issue[]};
+export function answersFromDraft(v:Draft):(Answer&{difficulty:Level})[];
+export function scanPixels(a:Uint8Array|Uint8ClampedArray,b:Uint8Array|Uint8ClampedArray,width:number,height:number,regions:Region[],start?:number,end?:number,mask?:Uint8ClampedArray|null):Scan;
+export function pixelReport(scan:Scan):Scan&{passed:boolean};
+export function parsePackage(text:string):{draft:Draft;images:{name:string;data:string;sha256:string}[]};
