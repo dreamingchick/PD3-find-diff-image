@@ -51,4 +51,3 @@
 - M4: dedicated backend, active administrator membership, real Auth sign-in, managed policies and private worker connection verified; synthetic live API lifecycle assertions passed and test residue was cleaned separately.
 - Approved hosted reviews can be explicitly exported as revalidated private snapshots. They remain pending under the local vault/catalog authority model; automatic authority transfer and web activation remain unfinished.
 - Live browser button flow remains unverified due the desktop browser tool limitation. No milestone or release is marked complete.
-

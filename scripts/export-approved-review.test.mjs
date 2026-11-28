@@ -27,6 +27,8 @@ test('approved export rechecks downloaded pixels, preserves authenticated proven
  const f=fixture(),path=join(root,'private.json');assert.deepEqual(await exportApprovedReview(f.client,f.row.digest,path,url,python),{digest:f.row.digest,exported:true,requiresLocalReview:true});
  const saved=JSON.parse(await readFile(path,'utf8'));assert.equal(saved.source.authority,'hosted-review-snapshot');assert.equal(saved.serverReview.decision.actorId,f.row.pd3_review_decisions[0].actor_id);assert.equal(saved.independentCheck.passed,true);
  const p=submission(JSON.stringify(saved.package));assert.equal(p.proof.contentDigest,f.row.digest);assert.equal(p.images.length,2);assert.deepEqual(f.counts(),{reads:2,downloads:2});assert.equal('authority' in saved.package,false);assert.equal('decision' in saved.package,false);
+ const objectRelations=fixture();objectRelations.row.pd3_review_validations=objectRelations.row.pd3_review_validations[0];objectRelations.row.pd3_review_decisions=objectRelations.row.pd3_review_decisions[0];
+ assert.equal((await exportApprovedReview(objectRelations.client,objectRelations.row.digest,join(root,'object-relations.json'),url,python)).exported,true);
 }));
 test('pending rejected failed ambiguous or malformed server approvals never download images or create a file',async()=>folder(async root=>{
  const original=fixture();

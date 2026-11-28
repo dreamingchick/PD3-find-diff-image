@@ -78,3 +78,6 @@ The trusted operator may run `supabase/tests/staging_policy_probe.sql` only on t
 The private envelope preserves the source project, authenticated decision actor/note/timestamp, worker receipt and content-bound Studio package. It is an unsigned snapshot taken by a trusted operator, not a portable authorization token. Editing a downloaded JSON cannot confer server authority. The contained package can be imported into Studio for fresh QA/test play, or submitted to the local review vault as **pending**. The existing catalog requires a separate trusted local decision; this exporter never fabricates `trusted-local-operator` authority, writes a decision, activates a catalog or deploys a website. Hosted approval-to-catalog authority transfer remains a separate step.
 
 Missing/rejected/pending/failed or ambiguous approval records fail closed. Altered bytes, outside-region changes, transfer failures and an approval change during download leave no output. Exported files contain private images and answers: never put them in public Git, browser build output, public artifacts or chat. Only explicitly selected digests are exported; there is no automatic bulk download.
+
+Export tests cover both object and single-element array relationship shapes returned by server adapters. Neither shape changes the approval requirements.
+
