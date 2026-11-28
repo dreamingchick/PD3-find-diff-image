@@ -14,3 +14,5 @@ export function answersFromDraft(v:Draft):(Answer&{difficulty:Level})[];
 export function scanPixels(a:Uint8Array|Uint8ClampedArray,b:Uint8Array|Uint8ClampedArray,width:number,height:number,regions:Region[],start?:number,end?:number,mask?:Uint8ClampedArray|null):Scan;
 export function pixelReport(scan:Scan):Scan&{passed:boolean};
 export function parsePackage(text:string):{draft:Draft;images:{name:string;data:string;sha256:string}[]};
+export function canonicalContent(draft:Draft,images:{name:string;sha256:string}[]):string;
+export function reviewReadiness(draft:Draft,report:Scan|null,played:boolean,reviewed:boolean):string[];

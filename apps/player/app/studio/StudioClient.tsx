@@ -1,7 +1,7 @@
 "use client";
 import {useEffect,useRef,useState} from 'react';
 import {stages} from '../stages';
-import {CHANGE_TYPES,REQUIRED,parseDraft,parsePackage,validateDraft,scanPixels,pixelReport} from '../../../../packages/studio-core/index.mjs';
+import {CHANGE_TYPES,REQUIRED,parseDraft,parsePackage,validateDraft,scanPixels,pixelReport,canonicalContent,reviewReadiness} from '../../../../packages/studio-core/index.mjs';
 import type {Draft,Level,ChangeType,Scan} from '../../../../packages/studio-core/index.mjs';
 import {listDrafts,readDraft,saveDraft,deleteDraft} from './drafts';
 import type {DraftIndex,DraftRecord} from './drafts';
@@ -21,10 +21,12 @@ export default function StudioClient(){
  const [saved,setSaved]=useState('초안 준비 중'),[drafts,setDrafts]=useState<DraftIndex[]>([]),[chosen,setChosen]=useState(''),[catalog,setCatalog]=useState(stages[0].id);
  const [selected,setSelected]=useState<number|null>(null),[drawing,setDrawing]=useState(false),[busy,setBusy]=useState<'loading'|'checking'|'exporting'|null>(null),[message,setMessage]=useState('이미지를 두 장 선택하거나 기존 그림에서 시작하세요.');
  const [report,setReport]=useState<Report|null>(null),[heatmap,setHeatmap]=useState<string|null>(null),[showHeatmap,setShowHeatmap]=useState(false),[reviewed,setReviewed]=useState(false),[preview,setPreview]=useState(false),[percent,setPercent]=useState(0),[leaveAnyway,setLeaveAnyway]=useState(false);
+ const [played,setPlayed]=useState(false),[requested,setRequested]=useState<string|null>(null);
  const alive=useRef(true),revision=useRef(0),run=useRef(0),assets=useRef<Pair>(images),map=useRef<string|null>(null),removeDialog=useRef<HTMLDialogElement>(null);
  const snapshot=useRef({draft,images,workspace,dirty});snapshot.current={draft,images,workspace,dirty};assets.current=images;
  const issues=validateDraft(draft),hasImages=Boolean(images[0]&&images[1]),selectedRegion=draft.regions.find(r=>r.id===selected),locked=!ready||busy!==null;
- function clearReport(){run.current++;setReport(null);setReviewed(false);setShowHeatmap(false);if(map.current){URL.revokeObjectURL(map.current);map.current=null}setHeatmap(null)}
+ const reviewReasons=reviewReadiness(draft,report,played,reviewed);
+ function clearReport(){run.current++;setReport(null);setReviewed(false);setPlayed(false);setRequested(null);setShowHeatmap(false);if(map.current){URL.revokeObjectURL(map.current);map.current=null}setHeatmap(null)}
  function change(next:Draft){revision.current++;setDraft(next);setDirty(true);setSaved('저장 대기');clearReport()}
  function commit(next:Draft,pair:Pair,key:string,restored=false){
   if(!alive.current){pair.forEach(i=>i&&URL.revokeObjectURL(i.url));return}
@@ -76,7 +78,7 @@ export default function StudioClient(){
  async function inspect(){
   if(!hasImages||locked)return;if(issues.errors.length){setMessage('제목·시간·정답 영역 오류를 먼저 확인해 주세요.');return}
   const token=++run.current,doc=draft,a=images[0]!,b=images[1]!,size=doc.resolution,total=size*size;
-  setBusy('checking');setPercent(0);setReport(null);setReviewed(false);const mask=new Uint8ClampedArray(total*4),sum:Scan={outsideChanged:0,totalChanged:0,transparent:0,regionChanged:doc.regions.map(()=>0)};
+  setBusy('checking');setPercent(0);setReport(null);setReviewed(false);setPlayed(false);setRequested(null);const mask=new Uint8ClampedArray(total*4),sum:Scan={outsideChanged:0,totalChanged:0,transparent:0,regionChanged:doc.regions.map(()=>0)};
   try{
    for(let start=0;start<total;start+=65536){if(token!==run.current||!alive.current)return;const part=scanPixels(a.pixels.data,b.pixels.data,size,size,doc.regions,start,Math.min(total,start+65536),mask);sum.outsideChanged+=part.outsideChanged;sum.totalChanged+=part.totalChanged;sum.transparent+=part.transparent;sum.regionChanged=sum.regionChanged.map((n,i)=>n+part.regionChanged[i]);setPercent(Math.round(Math.min(total,start+65536)/total*100));await new Promise<void>(resolve=>setTimeout(resolve,0))}
    if(token!==run.current||!alive.current)return;
@@ -86,13 +88,15 @@ export default function StudioClient(){
    setMessage(result.passed?'픽셀 검사 통과 · 플레이로 정답 영역도 확인하세요.':'픽셀 검사에서 수정할 부분을 찾았어요. 변경 픽셀 표시를 켜서 확인하세요.');
   }catch(e){if(token===run.current)setMessage(errorText(e))}finally{if(token===run.current&&alive.current)setBusy(null)}
  }
- async function exportFile(){
-  if(!report?.passed||issues.errors.length||!hasImages||locked)return;
+ async function exportFile(requestReview=false){
+  if(!report?.passed||issues.errors.length||!hasImages||locked||requestReview&&reviewReasons.length)return;
   setBusy('exporting');const rev=revision.current;
   try{const files=await Promise.all(images.map(async im=>({name:im!.name,sha256:im!.sha256,data:await dataUrl(im!.blob)})));
    if(!alive.current||rev!==revision.current)return;
-   const artifact={format:'pd3-studio-draft',version:1,visibility:'private',draft:parseDraft(draft),images:files,qa:{...report,semanticReview:reviewed&&!issues.warnings.length?'confirmed':'pending'}};
-   const url=URL.createObjectURL(new Blob([JSON.stringify(artifact)],{type:'application/json'})),link=document.createElement('a');link.href=url;link.download=draft.id+'.pd3.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);setMessage('비공개 검수 초안을 내보냈어요. 이미지와 정답이 포함되어 있으니 비공개로 보관하세요.');
+   const raw=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(canonicalContent(draft,files))),digest=[...new Uint8Array(raw)].map(v=>v.toString(16).padStart(2,'0')).join('');
+   if(!alive.current||rev!==revision.current)return;
+   const artifact={format:'pd3-studio-draft',version:1,visibility:'private',draft:parseDraft(draft),images:files,qa:{...report,semanticReview:reviewed&&!issues.warnings.length?'confirmed':'pending'},...(requestReview?{reviewRequest:{version:1,contentDigest:digest,requestedAt:new Date().toISOString(),testPlayCleared:true,semanticReviewConfirmed:true}}:{})};
+   const url=URL.createObjectURL(new Blob([JSON.stringify(artifact)],{type:'application/json'})),link=document.createElement('a');link.href=url;link.download=draft.id+(requestReview?'.review':'.pd3')+'.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);if(requestReview)setRequested(digest);setMessage(requestReview?'검수 요청 파일을 만들었어요. 비공개 검수함에 전달한 뒤 별도 승인이 필요해요.':'비공개 검수 초안을 내보냈어요. 이미지와 정답이 포함되어 있으니 비공개로 보관하세요.');
   }catch(e){setMessage(errorText(e))}finally{if(alive.current)setBusy(null)}
  }
  async function leave(){try{if(dirty)await persist();window.location.assign('/')}catch{setLeaveAnyway(true);setMessage('초안을 저장하지 못했어요. 먼저 내보내거나 저장 없이 메인으로 이동할 수 있어요.')}}
@@ -107,12 +111,18 @@ export default function StudioClient(){
    <div className="studio-draw-tools"><button disabled={locked||!hasImages||draft.regions.length>=7} aria-pressed={drawing} onClick={()=>setDrawing(v=>!v)}>{drawing?'그리기 취소':'영역 그리기'}</button><span>{drawing?'그림 위를 끌어 사각 영역을 만드세요.':'두 그림에 같은 영역이 표시돼요.'}</span>{heatmap&&<label><input type="checkbox" checked={showHeatmap} onChange={e=>setShowHeatmap(e.target.checked)}/>변경 픽셀 표시</label>}</div>
    <div className="studio-pictures">{[0,1].map(side=>images[side]?<RegionSurface key={side} source={images[side]!.url} size={draft.resolution} regions={draft.regions} selected={selected} drawing={drawing&&!locked} heatmap={showHeatmap?heatmap:null} side={side} onSelect={setSelected} onDraw={addBox}/>:<div className="studio-empty" key={side}><span>{side?'변형 그림':'원본 그림'}</span><p>이미지를 선택해 주세요.</p></div>)}</div>
   </section><aside className="studio-inspector"><div className="studio-region-heading"><h2>정답 영역</h2><span>{draft.regions.length} / {REQUIRED[draft.difficulty]}개</span></div><div className="studio-region-list">{draft.regions.map(r=><button key={r.id} disabled={locked} aria-pressed={selected===r.id} onClick={()=>setSelected(r.id)}>정답 {r.id}<small>{labels[r.difficulty]} · {changes[r.changeType]}</small></button>)}{!draft.regions.length&&<p>‘영역 그리기’를 누른 뒤 바뀐 곳을 표시하세요.</p>}</div>
-   {selectedRegion&&<fieldset className="studio-region-fields" disabled={locked}><legend>정답 {selectedRegion.id} 편집</legend><div className="studio-coordinates">{['X','Y','폭','높이'].map((label,i)=><label key={label}>{label}<input aria-label={`영역 ${label}`} type="number" min={0} max={draft.resolution} value={i===0?selectedRegion.box[0]:i===1?selectedRegion.box[1]:i===2?selectedRegion.box[2]-selectedRegion.box[0]:selectedRegion.box[3]-selectedRegion.box[1]} onChange={e=>editBox(i,Number(e.target.value))}/></label>)}</div><label>정답 난이도<select value={selectedRegion.difficulty} onChange={e=>change({...draft,regions:draft.regions.map(r=>r.id===selected?{...r,difficulty:e.target.value as Level}:r)})}>{Object.entries(labels).map(([v,label])=><option value={v} key={v}>{label}</option>)}</select></label><label>변경 유형<select value={selectedRegion.changeType} onChange={e=>change({...draft,regions:draft.regions.map(r=>r.id===selected?{...r,changeType:e.target.value as ChangeType}:r)})}>{CHANGE_TYPES.map(v=><option key={v} value={v}>{changes[v]}</option>)}</select></label><button className="studio-danger" onClick={()=>{change({...draft,regions:draft.regions.filter(r=>r.id!==selected)});setSelected(null)}}>선택 정답 삭제</button></fieldset>}
+   {selectedRegion&&<fieldset className="studio-region-fields" disabled={locked}><legend>정답 {selectedRegion.id} 편집</legend><div className="studio-coordinates">{['X','Y','폭','높이'].map((label,i)=><label key={label}>{label}<input aria-label={`영역 ${label}`} type="number" min={0} max={draft.resolution} value={i===0?selectedRegion.box[0]:i===1?selectedRegion.box[1]:i===2?selectedRegion.box[2]-selectedRegion.box[0]:selectedRegion.box[3]-selectedRegion.box[1]} onChange={e=>editBox(i,Number(e.target.value))}/></label>)}</div><label>정답 난이도<select aria-label="정답 난이도" value={selectedRegion.difficulty} onChange={e=>change({...draft,regions:draft.regions.map(r=>r.id===selected?{...r,difficulty:e.target.value as Level}:r)})}>{Object.entries(labels).map(([v,label])=><option value={v} key={v}>{label}</option>)}</select></label><label>변경 유형<select aria-label="변경 유형" value={selectedRegion.changeType} onChange={e=>change({...draft,regions:draft.regions.map(r=>r.id===selected?{...r,changeType:e.target.value as ChangeType}:r)})}>{CHANGE_TYPES.map(v=><option key={v} value={v}>{changes[v]}</option>)}</select></label><button className="studio-danger" onClick={()=>{change({...draft,regions:draft.regions.filter(r=>r.id!==selected)});setSelected(null)}}>선택 정답 삭제</button></fieldset>}
    {(hasImages||draft.regions.length>0)&&<ul className="studio-issues">{issues.errors.map((e,i)=><li key={'e'+i}>{e.message}</li>)}{issues.warnings.map((e,i)=><li className="warning" key={'w'+i}>{e.message}</li>)}</ul>}
-   <section className="studio-checks" aria-label="검사 결과"><h2>검사와 테스트</h2><button disabled={locked||!hasImages} onClick={inspect}>픽셀 차이 검사</button>{busy==='checking'&&<><progress value={percent} max={100} aria-label="픽셀 검사 진행"/><button onClick={()=>{run.current++;setBusy(null);setMessage('검사를 취소했어요.')}}>검사 취소</button></>}{report&&<div className={report.passed?'studio-pass':'studio-fail'}><strong>{report.passed?'픽셀 검사 통과':'픽셀 검사 수정 필요'}</strong><p>정답 밖에서 바뀐 픽셀 {report.outsideChanged.toLocaleString()}개</p>{report.transparent>0&&<p>투명 배경은 지원하지 않아요.</p>}{draft.regions.map((r,i)=><p key={r.id}>정답 {r.id} · 변화 {report.regionChanged[i].toLocaleString()}개</p>)}</div>}<label className="studio-review"><input type="checkbox" disabled={!report?.passed||issues.warnings.length>0||locked} checked={reviewed} onChange={e=>setReviewed(e.target.checked)}/>그림과 변경 유형을 직접 확인했어요.</label><button disabled={locked||!report?.passed} onClick={()=>setPreview(true)}>플레이 테스트</button><button className="studio-export" disabled={locked||!report?.passed||issues.errors.length>0} onClick={exportFile}>검수 초안 내보내기</button><p>이미지와 정답이 포함된 비공개 파일을 만들어요. 실제 게임에는 자동으로 반영되지 않아요.</p></section>
+   <section className="studio-checks" aria-label="검사 결과"><h2>검사와 테스트</h2><button disabled={locked||!hasImages} onClick={inspect}>픽셀 차이 검사</button>{busy==='checking'&&<><progress value={percent} max={100} aria-label="픽셀 검사 진행"/><button onClick={()=>{run.current++;setBusy(null);setMessage('검사를 취소했어요.')}}>검사 취소</button></>}{report&&<div className={report.passed?'studio-pass':'studio-fail'}><strong>{report.passed?'픽셀 검사 통과':'픽셀 검사 수정 필요'}</strong><p>정답 밖에서 바뀐 픽셀 {report.outsideChanged.toLocaleString()}개</p>{report.transparent>0&&<p>투명 배경은 지원하지 않아요.</p>}{draft.regions.map((r,i)=><p key={r.id}>정답 {r.id} · 변화 {report.regionChanged[i].toLocaleString()}개</p>)}</div>}<label className="studio-review"><input type="checkbox" disabled={!report?.passed||issues.warnings.length>0||locked} checked={reviewed} onChange={e=>setReviewed(e.target.checked)}/>그림과 변경 유형을 직접 확인했어요.</label><button disabled={locked||!report?.passed} onClick={()=>setPreview(true)}>플레이 테스트</button><button className="studio-export" disabled={locked||!report?.passed||issues.errors.length>0} onClick={()=>exportFile()}>검수 초안 내보내기</button><p>이미지와 정답이 포함된 비공개 파일을 만들어요. 실제 게임에는 자동으로 반영되지 않아요.</p>
+    <section className="studio-review-request" aria-label="검수 요청"><h3>승인 전 검수</h3><p>{played?'플레이 테스트 완료':'플레이 테스트 미완료'}</p>
+     {reviewReasons.length>0&&<ul>{reviewReasons.map((reason,i)=><li key={i}>{reason}</li>)}</ul>}
+     <button disabled={locked||!hasImages||reviewReasons.length>0} onClick={()=>exportFile(true)}>검수 요청 파일 만들기</button>
+     {requested&&<p role="status">검수 요청 파일 생성됨 · 승인 대기<br/><code>{requested.slice(0,12)}</code></p>}
+     <p>파일을 비공개 검수함에 전달해 주세요. 서버 접수나 승인은 자동으로 처리되지 않아요. 수정하면 새 버전으로 다시 검사해야 해요.</p>
+    </section></section>
   </aside></div>
   <p className="studio-message" role="status">{message}</p>{leaveAnyway&&<button onClick={()=>{setDirty(false);setTimeout(()=>window.location.assign('/'),0)}}>저장 없이 메인으로</button>}
   <dialog ref={removeDialog} className="studio-delete-dialog" aria-labelledby="delete-title"><h2 id="delete-title">이 초안을 삭제할까요?</h2><p>이 기기에 저장된 초안만 삭제돼요. 원본 게임은 바뀌지 않아요.</p><button onClick={()=>removeDialog.current?.close()}>취소</button><button onClick={async()=>{const key=chosen;removeDialog.current?.close();setBusy('loading');try{if(key===workspace){run.current++;commit(blank('draft-'+crypto.randomUUID().slice(-8)),[null,null],'local-'+crypto.randomUUID(),true);setDirty(false)}await deleteDraft(key);setChosen('');await refresh();setMessage('초안을 삭제했어요.')}catch(e){setMessage(errorText(e))}finally{setBusy(null)}}}>초안 삭제 확인</button></dialog>
-  {preview&&images[0]&&images[1]&&<StudioPreview draft={draft} sources={[images[0].url,images[1].url]} onClose={()=>setPreview(false)}/>}
+  {preview&&images[0]&&images[1]&&<StudioPreview draft={draft} sources={[images[0].url,images[1].url]} onClose={cleared=>{setPlayed(p=>p||cleared);setPreview(false)}}/>}
  </main>;
 }

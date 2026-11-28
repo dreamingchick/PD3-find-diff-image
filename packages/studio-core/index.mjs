@@ -60,3 +60,18 @@ export function parsePackage(source){
  // Imported validation/review flags are deliberately not trusted.
  return {draft,images};
 }
+
+// Field order is shared with the independent private review worker. No QA flags
+// or timestamps are included: identical content always identifies one revision.
+export function canonicalContent(draft,images){
+ const d=parseDraft(draft);
+ if(!Array.isArray(images)||images.length!==2||images.some(i=>!object(i)||!text(i.name,160)||typeof i.sha256!=='string'||!/^[a-f0-9]{64}$/.test(i.sha256)))throw Error('이미지 검증 정보가 필요해요.');
+ return JSON.stringify({draft:d,images:images.map(i=>({name:i.name,sha256:i.sha256}))});
+}
+export function reviewReadiness(draft,report,played,reviewed){
+ const {errors,warnings}=validateDraft(draft),reasons=[...errors,...warnings].map(i=>i.message);
+ if(!report||!pixelReport(report).passed)reasons.push('현재 초안의 픽셀 검사를 통과해 주세요.');
+ if(!played)reasons.push('플레이 테스트에서 모든 정답을 확인해 주세요.');
+ if(!reviewed)reasons.push('그림과 변경 유형을 직접 확인해 주세요.');
+ return reasons;
+}

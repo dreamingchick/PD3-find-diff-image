@@ -22,7 +22,15 @@ Change types are add, remove, color, size, move, rotate, shape, detail and count
 
 Only the same rectangle on both images is editable in this increment. Unequal per-side boxes and nonrectangular regions are rejected rather than converted silently. Circular sample targets can be initialized as bounded pixel rectangles and must pass QA again.
 
-Server draft storage, administrator roles beyond staging SSO, approval workflows, runtime publication, polygon/circle editing, image generation and production deployment remain pending. Keep whole-project authentication enabled for staging, including `/studio`, static assets and exported route files. Public release needs separate approval.
+Server draft storage, administrator roles beyond staging SSO, server approval workflows, runtime publication, polygon/circle editing, image generation and production deployment remain pending. Keep whole-project authentication enabled for staging, including `/studio`, static assets and exported route files. Public release needs separate approval.
+
+## Review requests and private staging bundles
+
+The editor can now generate a **검수 요청 파일** after current pixel QA, complete test play, change classification and manual visual confirmation. It includes a SHA-256 content revision covering normalized metadata/regions and both ordered image names/digests. Downloads are not server submissions; the file must be transferred privately. Editing, restoring or importing clears local review/test evidence. A partial test is insufficient. Downloading a plain draft remains possible before review readiness.
+
+The offline [private review worker](../workers/content-review/README.md) independently decodes and checks each request. It stores immutable content revisions and a single explicit approval/rejection decision per revision. Only approved revisions can produce a private staging bundle, with a final image/pixel/digest recheck and matching provenance. It never modifies the active catalog or deploys a site. Its reviewer labels are trusted local operator declarations, not authenticated identities. Server roles and approval enforcement require a future identity/storage integration.
+
+Seven synthetic Python tests cover the review boundary, including actual concurrent decision writes and changed-content rejection. Two additional core tests cover canonical cross-runtime revisions and readiness; four additional browser cases cover request gating, partial versus complete test play, digest binding and edit/import invalidation. The full suites now have 32 Node tests, 64 browser cases, plus 7 review-worker and 3 image-pipeline Python tests.
 
 ## Verification
 

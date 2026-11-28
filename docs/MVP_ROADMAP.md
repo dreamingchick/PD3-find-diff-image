@@ -27,3 +27,9 @@
 - M4 local authoring implemented at `/studio`: image pairs, linked rectangular regions, metadata, pixel QA, independent test play, local drafts and private package exchange.
 - Existing catalog entries are copied into drafts; the editor does not publish or change runtime stages. Separate server roles, storage, approval and publication remain pending.
 - See STUDIO.md for supported geometry, privacy boundaries and validation. Keep all staging paths under authentication. This does not complete M4 or authorize public release.
+
+## Review gate increment — 2026-11-28
+
+- M4: content-bound review requests and an offline trusted-operator approval gate implemented; approved-only private staging bundles can be generated without changing the active game.
+- Server accounts/roles, durable server draft storage, authenticated decisions and runtime catalog activation remain pending. Local reviewer labels do not implement these roles.
+- Public publication and paid resources remain outside the authorized staging scope.
