@@ -8,7 +8,14 @@ export type {Progress,Session};
 export const empty=emptyProgress;
 let queue:Promise<unknown>=Promise.resolve(),channel:BroadcastChannel|undefined;
 function bus(){try{if(typeof BroadcastChannel!=="undefined")return channel??(channel=new BroadcastChannel("pd3-progress"))}catch{}return undefined}
-function db():Promise<IDBDatabase>{return new Promise((resolve,reject)=>{const r=indexedDB.open("pd3-progress",1);r.onupgradeneeded=()=>r.result.createObjectStore("state");r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}
+function db():Promise<IDBDatabase>{return new Promise((resolve,reject)=>{
+ const r=indexedDB.open("pd3-progress",2);let timedOut=false,wait:ReturnType<typeof setTimeout>|undefined;
+ r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains("state"))r.result.createObjectStore("state")};
+ r.onblocked=()=>{wait=setTimeout(()=>{timedOut=true;reject(Error("다른 창을 새로고침한 뒤 다시 시도해 주세요."))},3000)};
+ r.onsuccess=()=>{if(wait)clearTimeout(wait);if(timedOut){r.result.close();return}r.result.onversionchange=()=>r.result.close();resolve(r.result)};
+ r.onerror=()=>{if(wait)clearTimeout(wait);reject(r.error)};
+})}
+
 function edit<T>(change:(p:Progress)=>{progress:Progress;value:T},notify=true,recover=false):Promise<{progress:Progress;value:T}>{
  const run=queue.catch(()=>{}).then(async()=>{
   const d=await db();

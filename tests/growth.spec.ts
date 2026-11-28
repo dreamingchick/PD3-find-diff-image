@@ -5,8 +5,8 @@ const entry={score:4500,stars:3,elapsed:20,wrong:0,hints:0};
 const legacy={records:{'sample-001:normal':{first:entry,best:entry,recent:entry,maxStars:3},'sample-001:challenge':{first:entry,best:entry,recent:entry,maxStars:3}},sessions:{}};
 async function start(page:Page){await expect(page.getByRole('button',{name:/^스테이지 1 ·/})).toBeEnabled();await page.getByRole('button',{name:/^스테이지 1 ·/}).click();await expect(page.getByRole('button',{name:'힌트 1',exact:true})).toBeEnabled()}
 async function complete(page:Page){for(const [i,a] of answers.entries()){const b=(await page.locator('canvas').nth(i%2).boundingBox())!;await page.mouse.click(b.x+b.width*a.x,b.y+b.height*a.y);await expect(page.getByRole('progressbar',{name:'찾은 정답'})).toHaveAttribute('aria-valuenow',String(i+1))}await expect(page.getByRole('region',{name:'클리어 결과'})).toBeVisible();await expect(page.locator('.clear-reward')).not.toContainText('저장하고')}
-async function read(page:Page){return page.evaluate(async()=>{const d=await new Promise<IDBDatabase>((resolve,reject)=>{const r=indexedDB.open('pd3-progress',1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});try{return await new Promise<any>((resolve,reject)=>{const r=d.transaction('state').objectStore('state').get('progress');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}finally{d.close()}})}
-async function seed(page:Page,value:unknown){await page.evaluate(async v=>{const d=await new Promise<IDBDatabase>((resolve,reject)=>{const r=indexedDB.open('pd3-progress',1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});try{await new Promise<void>((resolve,reject)=>{const tx=d.transaction('state','readwrite');tx.objectStore('state').put(v,'progress');tx.oncomplete=()=>resolve();tx.onabort=()=>reject(tx.error)})}finally{d.close()}},value)}
+async function read(page:Page){return page.evaluate(async()=>{const d=await new Promise<IDBDatabase>((resolve,reject)=>{const r=indexedDB.open('pd3-progress');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});try{return await new Promise<any>((resolve,reject)=>{const r=d.transaction('state').objectStore('state').get('progress');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}finally{d.close()}})}
+async function seed(page:Page,value:unknown){await page.evaluate(async v=>{const d=await new Promise<IDBDatabase>((resolve,reject)=>{const r=indexedDB.open('pd3-progress');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});try{await new Promise<void>((resolve,reject)=>{const tx=d.transaction('state','readwrite');tx.objectStore('state').put(v,'progress');tx.oncomplete=()=>resolve();tx.onabort=()=>reject(tx.error)})}finally{d.close()}},value)}
 
 test('first clear rewards persist; free then stock hints and replay never repay',async({page})=>{
  await page.goto('/');await start(page);await complete(page);await expect(page.getByText('첫 완성 보상 · +100코인 · +60 EXP')).toBeVisible();await page.getByRole('button',{name:'메인으로',exact:true}).click();
@@ -54,7 +54,7 @@ test('a final answer cannot outrun the pending hint debit',async({page})=>{
  for(const [i,a] of answers.slice(0,-1).entries()){const b=(await page.locator('canvas').nth(i%2).boundingBox())!;await page.mouse.click(b.x+b.width*a.x,b.y+b.height*a.y);await expect(page.getByRole('progressbar',{name:'찾은 정답'})).toHaveAttribute('aria-valuenow',String(i+1))}
  await page.evaluate(async()=>{
   const w=window as typeof window&{holdProgress?:boolean};w.holdProgress=true;
-  const d=await new Promise<IDBDatabase>((resolve,reject)=>{const r=indexedDB.open('pd3-progress',1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});
+  const d=await new Promise<IDBDatabase>((resolve,reject)=>{const r=indexedDB.open('pd3-progress');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});
   const tx=d.transaction('state','readwrite'),store=tx.objectStore('state');
   await new Promise<void>(resolve=>{let first=true;function loop(){const r=store.get('progress');r.onsuccess=()=>{if(first){first=false;resolve()}if(w.holdProgress)loop()}}loop()});tx.oncomplete=()=>d.close();
  });
@@ -65,4 +65,17 @@ test('a final answer cannot outrun the pending hint debit',async({page})=>{
  await expect(page.getByRole('button',{name:'힌트 0',exact:true})).toBeVisible();const a=answers.at(-1)!,b=(await page.locator('canvas').first().boundingBox())!;
  await page.mouse.click(b.x+b.width*a.x,b.y+b.height*a.y);await expect(page.getByRole('region',{name:'클리어 결과'})).toBeVisible();
  await expect.poll(async()=>(await read(page)).records['sample-001:normal']?.recent.hints).toBe(1);expect((await read(page)).records['sample-001:normal'].recent.stars).toBe(2);
+});
+
+test('database upgrade retains v1 data and blocks legacy snapshot writers',async({page})=>{
+ await page.addInitScript(fixture=>{
+  const r=indexedDB.open('pd3-progress',1);
+  r.onupgradeneeded=()=>{const store=r.result.createObjectStore('state');store.put(fixture,'progress')};
+  r.onsuccess=()=>r.result.close();r.onerror=e=>e.preventDefault();
+ },legacy);
+ await page.goto('/');await expect(page.getByLabel('보유 코인 100',{exact:true})).toBeVisible();
+ const version=await page.evaluate(()=>new Promise<number>((resolve,reject)=>{const r=indexedDB.open('pd3-progress');r.onsuccess=()=>{const n=r.result.version;r.result.close();resolve(n)};r.onerror=()=>reject(r.error)}));expect(version).toBe(2);
+ const blocked=await page.evaluate(()=>new Promise<string>(resolve=>{const r=indexedDB.open('pd3-progress',1);r.onsuccess=()=>{r.result.close();resolve('unexpectedly-opened')};r.onerror=e=>{e.preventDefault();resolve(r.error?.name??'unknown')}}));expect(blocked).toBe('VersionError');
+ expect((await read(page)).wallet).toEqual({coins:100,xp:60,hints:0,claimed:['sample-001']});
+ await page.reload();await expect(page.getByLabel('보유 코인 100',{exact:true})).toBeVisible();
 });
