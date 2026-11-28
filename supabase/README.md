@@ -4,7 +4,7 @@ The `/studio/reviews` browser UI connects to a dedicated Supabase staging projec
 
 ## Deployment status and setup boundary
 
-The migration, client and trusted validation worker are implemented and tested locally. A live PD3 project must be explicitly selected/provisioned in the user's chosen organization before applying this schema. Existing unrelated projects must not be reused. A new project with a nonzero quoted cost requires user approval. The project's organization and initial administrator identity are still required setup inputs; generic UI tests do not establish a live administrator session.
+The dedicated PD3 staging backend has been provisioned in the user-approved organization on the Free plan in Seoul. The schema and private bucket are installed. Managed PostgreSQL checks passed all 14 permission assertions, and every synthetic fixture was rolled back. Security advisors reported no findings. Initial Auth account/password creation, owner membership and the trusted worker secret connection remain pending; live administrator login has not been verified.
 
 The migration file was created using Supabase CLI 3.4.0. Apply it only to the dedicated PD3 staging project after confirming its ID/name and healthy status and inspecting its tables. Do not apply it to another application's database. Run Supabase security/performance advisors after installation and verify that anonymous and unregistered identities cannot read tables/images.
 
@@ -63,8 +63,10 @@ Web decisions do not yet automatically feed the offline catalog/deployment pipel
 
 ## Verification
 
-`npm run test:server` executes the real migration in embedded PostgreSQL with representative Auth/Storage schemas and actual role/grant/RLS checks. Nine cases cover anonymous/nonmember denial, editor isolation, forged claims, immutable content, exact upload paths, checked-only approvals, immutable authenticated decisions, worker-only receipts/queue and role revocation. This is not a hosted Supabase/Auth integration test.
+`npm run test:server` executes the real migration in embedded PostgreSQL with representative Auth/Storage schemas and actual role/grant/RLS checks. Ten cases cover anonymous/nonmember denial, editor isolation, forged claims, immutable content, exact upload paths, checked-only approvals, immutable authenticated decisions, worker-only receipts/queue and role revocation. This is not a hosted Supabase/Auth integration test.
 
 `npm run test:worker` uses generated synthetic images and the real Python pixel validator to test receipt creation, altered bytes/outside changes, network retry behavior and concurrent receipt handling. Browser tests use a synthetic HTTP provider for login, private-image headers, review gating, partial upload retry, revocation cleanup and responsive layout. A live administrator login must still be verified after project/account setup.
 
 Official references: [password authentication](https://supabase.com/docs/guides/auth/passwords), [Storage policies](https://supabase.com/docs/guides/storage/security/access-control), [row security](https://supabase.com/docs/guides/database/postgres/row-level-security).
+
+The trusted operator may run `supabase/tests/staging_policy_probe.sql` only on the dedicated staging project. Its nested exception transaction rolls back synthetic Auth IDs, memberships, Storage metadata, requests and receipts. It creates no passwords, sessions, email or real image files. Check the returned verification flags and independently confirm no fixtures remain. This proves managed SQL policy enforcement, not real Auth login or pixel validation.
