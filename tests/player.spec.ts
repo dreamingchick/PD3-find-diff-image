@@ -42,6 +42,18 @@ test('keyboard play, home and browser reload preserve normal progress',async({pa
  await page.goBack();await expect(page.getByRole('heading',{name:'어떤 그림을 만나볼까요?'})).toBeVisible();
 });
 
+test('content replacement resets stale answers while retaining wallet and completed records',async({page})=>{
+ await page.goto('/');await expect(page.getByLabel('보유 코인 0',{exact:true})).toBeVisible();
+ const entry={score:500,stars:3,elapsed:15,wrong:0,hints:0};
+ const progress={version:2,revision:0,records:{'sample-001:normal':{first:entry,best:entry,recent:entry,maxStars:3}},wallet:{coins:37,xp:60,hints:2,claimed:['sample-001']},sessions:{'sample-001':{found:[1,2],wrong:3,elapsed:99,used:true,hints:1,attemptId:'older-content',contentVersion:'a'.repeat(64)}}};
+ await page.getByRole('button',{name:'설정',exact:true}).click();await page.getByLabel('백업 복원').setInputFiles({name:'older-version.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({format:'pd3-progress',version:2,progress}))});
+ await expect(page.getByText('진행을 복원했습니다.',{exact:true})).toBeVisible();await page.getByRole('button',{name:'메인',exact:true}).click();await expect(page.getByRole('button',{name:/^이어서 찾기/})).toHaveCount(0);
+ await expect(page.getByLabel('보유 코인 37',{exact:true})).toBeVisible();await start(page);await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow','0');await expect(page.getByText('그림이 업데이트되어 새로 시작해요. 기존 기록과 보상은 유지됩니다.',{exact:true})).toBeVisible();
+ const a=answers[0],b=(await page.locator('canvas').first().boundingBox())!;await page.mouse.click(b.x+b.width*a.x,b.y+b.height*a.y);await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow','1');await page.getByRole('button',{name:'메인으로 돌아가기',exact:true}).click();
+ await expect(page.getByLabel('보유 코인 37',{exact:true})).toBeVisible();await expect(page.getByLabel('보유 힌트 2',{exact:true})).toBeVisible();await expect(page.getByLabel('누적 별 3 / 3',{exact:true})).toBeVisible();
+ await page.reload();await page.getByRole('button',{name:/^이어서 찾기/}).click();await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow','1');await expect(page.getByText('그림이 업데이트되어 새로 시작해요. 기존 기록과 보상은 유지됩니다.',{exact:true})).toHaveCount(0);
+});
+
 test('direct pinch or wheel zoom allows answers; landscape uses full height',async({page})=>{
  await page.goto('/');const viewport=page.viewportSize()!;
  if(viewport.width===320){

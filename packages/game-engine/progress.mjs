@@ -20,7 +20,8 @@ export function validateProgress(value){
   if(!stageId(key)||!object(v)||!Array.isArray(v.found)||v.found.length>100||!v.found.every(uint)||new Set(v.found).size!==v.found.length||!uint(v.wrong)||!uint(v.elapsed)||typeof v.used!=='boolean')throw Error('Invalid session');
   const hints=legacy?Number(v.used):v.hints,attemptId=legacy?'legacy-'+key:v.attemptId;
   if(!uint(hints)||(v.used?hints<1:hints!==0)||typeof attemptId!=='string'||!/^[\w-]{1,160}$/.test(attemptId))throw Error('Invalid hint session');
-  sessions[key]={found:[...v.found],wrong:v.wrong,elapsed:v.elapsed,used:v.used,hints,attemptId};
+  if(v.contentVersion!==undefined&&(typeof v.contentVersion!=='string'||!/^[a-f0-9]{64}$/.test(v.contentVersion)))throw Error('Invalid content version');
+  sessions[key]={found:[...v.found],wrong:v.wrong,elapsed:v.elapsed,used:v.used,hints,attemptId,...(v.contentVersion===undefined?{}:{contentVersion:v.contentVersion})};
  }
  const cleared=[...new Set(Object.entries(records).filter(([,v])=>v.maxStars>0).map(([key])=>key.split(':')[0]))];
  let wallet;
@@ -47,4 +48,4 @@ export function unlocked(records,stages,id){
  const i=stages.findIndex(s=>s.id===id);if(i<0)return false;
  return (i===0||stageStars(records,stages[i-1].id)>0)&&totalStars(records,stages.slice(0,i))>=(stages[i].requiredStars??0);
 }
-export function resumeSession(progress,stage){const s=progress.sessions[stage.id];if(!s)return undefined;const ids=new Set(stage.answers.map(a=>a.id));return {...s,found:s.found.filter(id=>ids.has(id))};}
+export function resumeSession(progress,stage){const s=progress.sessions[stage.id];if(!s||(s.contentVersion??'')!==(stage.version??''))return undefined;const ids=new Set(stage.answers.map(a=>a.id));return {...s,found:s.found.filter(id=>ids.has(id))};}

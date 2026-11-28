@@ -24,3 +24,15 @@ test('reject corrupt, future, oversized and prototype-polluting backups',()=>{
  assert.throws(()=>restore('{"format":"pd3-progress","version":1,"progress":{"records":{},"sessions":{"__proto__":{"found":[],"wrong":0,"elapsed":0,"used":false}}}}'));
  assert.throws(()=>backup({records:{},sessions:{a:{found:[1,1],wrong:0,elapsed:0,used:false}}}));
 });
+
+test('unfinished answers resume only against the same content version, including rollback',()=>{
+ const p=emptyProgress(),stage={id:'a',version:'a'.repeat(64),answers:[{id:1}]};p.sessions.a={found:[1],wrong:2,elapsed:9,used:true,hints:1,attemptId:'version-test',contentVersion:stage.version};
+ const copy=restore(backup(p));assert.equal(resumeSession(copy,stage).found.length,1);assert.equal(copy.sessions.a.contentVersion,stage.version);
+ assert.equal(resumeSession(copy,{...stage,version:'b'.repeat(64)}),undefined);assert.equal(resumeSession(copy,{...stage,version:undefined}),undefined);
+ delete copy.sessions.a.contentVersion;assert.equal(resumeSession(copy,stage),undefined);assert.equal(resumeSession(copy,{...stage,version:undefined}).found.length,1);
+});
+test('content changes retain first-clear wallet and historical records; malformed versions are rejected',()=>{
+ const p=validateProgress({records:{'a:normal':record},sessions:{a:{found:[1],wrong:0,elapsed:1,used:false}}});
+ p.sessions.a.contentVersion='a'.repeat(64);const restored=restore(backup(p));assert.equal(resumeSession(restored,{id:'a',version:'b'.repeat(64),answers:[{id:1}]}),undefined);
+ assert.deepEqual(restored.records,p.records);assert.deepEqual(restored.wallet,p.wallet);p.sessions.a.contentVersion='bad';assert.throws(()=>validateProgress(p));
+});

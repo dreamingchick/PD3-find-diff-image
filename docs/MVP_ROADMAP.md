@@ -33,3 +33,9 @@
 - M4: content-bound review requests and an offline trusted-operator approval gate implemented; approved-only private staging bundles can be generated without changing the active game.
 - Server accounts/roles, durable server draft storage, authenticated decisions and runtime catalog activation remain pending. Local reviewer labels do not implement these roles.
 - Public publication and paid resources remain outside the authorized staging scope.
+
+## Catalog selection increment — 2026-11-28
+
+- M4: approved revisions can form ordered private staging build catalogs, with checked activation/rollback and a selected-catalog build input in PD3-assets.
+- Local unfinished sessions are pinned to content versions; revision changes preserve historical progression and rewards while resetting stale answer positions.
+- Private operator tooling is implemented. Server identity/roles/storage, web activation and production publication remain pending; M4 is not complete.
