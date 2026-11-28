@@ -22,6 +22,8 @@ Requests are stored under their content digest. Resubmission is idempotent and r
 
 The output contains versioned images, `stage.json` with normalized player geometry, and `provenance.json`. It is an **approved private staging bundle**, not an active deployment or runtime catalog update. Only target `staging` is supported. Production export, automatic publication, server roles, durable server storage and ranking trust are outside this increment.
 
+For ordered release assembly, selection, rollback and private player build inputs, see [CATALOG.md](CATALOG.md). The separate catalog tool consumes these approved revisions and rechecks their bytes/provenance throughout that flow.
+
 Validation:
 
 ```powershell
