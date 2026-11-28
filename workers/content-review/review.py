@@ -180,6 +180,9 @@ def decide(vault, digest, decision, reviewer, note):
     path, _ = load_revision(vault, digest)
     require(decision in ('approved', 'rejected') and text(reviewer, 120) and reviewer.strip() and text(note, 2000) and note.strip(), 'explicit reviewer and review note required')
     record = {'version': 1, 'digest': digest, 'decision': decision, 'reviewer': reviewer, 'note': note, 'decidedAt': timestamp(), 'authority': 'trusted-local-operator'}
+    if (path / 'hosted-origin.json').exists() or (path / 'hosted-origin.json').is_symlink():
+        from hosted_review import stored_evidence
+        record['hostedSource'] = stored_evidence(path, digest)
     # Link a complete temporary record atomically. Concurrent decisions cannot
     # replace one another, and readers never see a partially written approval.
     fd, temp = tempfile.mkstemp(prefix='.decision-', dir=path)
@@ -197,6 +200,11 @@ def approved_revision(vault, digest):
     require(not (path / 'decision.json').is_symlink(), 'decision symlinks unsupported')
     decision = json.loads((path / 'decision.json').read_text(encoding='utf-8'))
     require(isinstance(decision, dict) and type(decision.get('version')) is int and decision['version'] == 1 and decision.get('digest') == digest and decision.get('decision') == 'approved' and decision.get('authority') == 'trusted-local-operator' and isinstance(decision.get('reviewer'), str) and decision['reviewer'].strip() and isinstance(decision.get('note'), str) and decision['note'].strip(), 'revision not approved')
+    if (path / 'hosted-origin.json').exists() or (path / 'hosted-origin.json').is_symlink():
+        from hosted_review import stored_evidence
+        require(decision.get('hostedSource') == stored_evidence(path, digest), 'hosted approval provenance changed')
+    else:
+        require('hostedSource' not in decision, 'hosted approval provenance missing')
     return result, decision
 
 

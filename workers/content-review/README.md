@@ -31,3 +31,19 @@ python -m unittest discover -s workers/content-review -p 'test_*.py'
 ```
 
 Tests use only generated synthetic images in temporary directories. They cover pending/rejected export blocks, digest and image tampering, invalid geometry/types, output limits, idempotency, concurrent decisions and parity with the browser's canonical digest.
+
+## Hosted snapshot intake
+
+A hosted export is unsigned evidence, not a local approval. Import one explicitly pinned project/revision as pending:
+
+```powershell
+python workers/content-review/hosted_review.py --vault ../PD3-assets/reviews --snapshot ../PD3-assets/review-exports/REVISION.json --project https://YOUR_PROJECT_REF.supabase.co --digest REVISION
+```
+
+The importer re-decodes the actual image bytes, checks pixels/geometry/digests and matches the entire server content/approval audit record to the package. It stores a complete pending revision with request.json, received.json and hosted-origin.json. It does not create decision.json, change a catalog or deploy anything. Existing local revisions cannot silently acquire hosted origin; conflicting imports and existing decisions are never overwritten. Identical imports are idempotent. Keep all input/output paths private and outside public checkouts.
+
+A trusted local operator still uses the existing explicit `review.py decide` command with their own name and reason. That local decision records the original hosted actor/note/timestamps and the exact snapshot hash under hostedSource. The hosted actor is not substituted for the local operator. An imported JSON's identity fields remain unsigned claims; only the trusted operator can accept them after checking the source. This is an audited local adoption step, not an offline proof of server authentication.
+
+Stage/catalog checks revalidate imported bytes and require the stored origin to match the local decision. Changed/missing origin or altered audit data blocks staging, catalog validation, selection and export. Existing purely local revisions retain their current trust model. Synthetic fixtures are never real-content approvals.
+
+Seven hosted-intake tests cover pending-only intake, explicit local adoption/catalog provenance, malformed/mismatched/tampered snapshots, immutable/idempotent imports, retained rejection, conflicting local revisions, concurrent imports, missing/changed origin and the actual Node-export-to-Python-import path. The cross-language test requires installed Node dependencies as well as the existing Python image dependencies.

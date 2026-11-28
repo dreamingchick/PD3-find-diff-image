@@ -32,3 +32,6 @@ Normal sessions retain `contentVersion` in IndexedDB and v2 backups. Resume requ
 Historical records, stars, unlocks and the wallet remain keyed by stable picture ID; a revision does not earn another first-clear grant. Legacy unversioned sessions continue against unversioned stages. Older clients/backups that omit the optional version fail closed for versioned stages rather than restoring stale answer positions. Database and backup versions remain compatible. This is local practice progress and does not authorize ranked records.
 
 Seven catalog tests exercise approval gates, deterministic ordering, exact rollback/export, real concurrent selection, stale tokens, byte/provenance tampering, interrupted pointer writes and private/staging output boundaries. Player tests cover same-version restoration and changed-version reset with retained rewards.
+
+Hosted snapshots may now enter the vault as pending through hosted_review.py. They still require an explicit trusted local decision; unsigned server identity claims alone cannot authorize a catalog. Imported provenance (hosted actor plus the local operator's separate acceptance) is revalidated throughout staging/catalog operations. See README.md for the intake command and trust boundary.
+
