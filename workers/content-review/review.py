@@ -192,28 +192,37 @@ def decide(vault, digest, decision, reviewer, note):
     return record
 
 
-def stage(vault, digest, output, target='staging'):
-    require(target == 'staging', 'only private staging export is allowed')
+def approved_revision(vault, digest):
     path, result = load_revision(vault, digest)
     require(not (path / 'decision.json').is_symlink(), 'decision symlinks unsupported')
     decision = json.loads((path / 'decision.json').read_text(encoding='utf-8'))
     require(isinstance(decision, dict) and type(decision.get('version')) is int and decision['version'] == 1 and decision.get('digest') == digest and decision.get('decision') == 'approved' and decision.get('authority') == 'trusted-local-operator' and isinstance(decision.get('reviewer'), str) and decision['reviewer'].strip() and isinstance(decision.get('note'), str) and decision['note'].strip(), 'revision not approved')
+    return result, decision
+
+
+def stage_value(result):
+    d, digest, answers = result['draft'], result['digest'], []
+    n = d['resolution']
+    for r in d['regions']:
+        x0, y0, x1, y1 = r['box']
+        box = {'shape': 'rect', 'x': x0/n, 'y': y0/n, 'w': (x1-x0)/n, 'h': (y1-y0)/n}
+        answers.append({'id': r['id'], 'x': (x0+x1)/(2*n), 'y': (y0+y1)/(2*n), 'r': max(x1-x0, y1-y0)/(2*n), 'hitboxes': [box.copy(), box.copy()], 'difficulty': r['difficulty']})
+    images = [f'/qa/{digest}-{side}.{extension}' for side, (_, extension) in enumerate(result['binaries'])]
+    return {'id': d['id'], 'title': d['title'], 'chapter': d['chapter'], 'difficulty': d['difficulty'], 'limit': d['limit'], 'version': digest, 'images': images, 'answers': answers}
+
+
+def stage(vault, digest, output, target='staging'):
+    require(target == 'staging', 'only private staging export is allowed')
+    result, decision = approved_revision(vault, digest)
     destination = private_destination(output)
     require(not destination.exists(), 'output already exists; use a new version directory')
     destination.parent.mkdir(parents=True, exist_ok=True)
     temporary = Path(tempfile.mkdtemp(prefix='.stage-', dir=destination.parent))
     try:
-        d, images, answers = result['draft'], [], []
         for side, (raw, extension) in enumerate(result['binaries']):
             name = f'{digest}-{side}.{extension}'
             (temporary / name).write_bytes(raw)
-            images.append('/qa/' + name)
-        n = d['resolution']
-        for r in d['regions']:
-            x0, y0, x1, y1 = r['box']
-            box = {'shape': 'rect', 'x': x0/n, 'y': y0/n, 'w': (x1-x0)/n, 'h': (y1-y0)/n}
-            answers.append({'id': r['id'], 'x': (x0+x1)/(2*n), 'y': (y0+y1)/(2*n), 'r': max(x1-x0, y1-y0)/(2*n), 'hitboxes': [box.copy(), box.copy()], 'difficulty': r['difficulty']})
-        write_json(temporary / 'stage.json', {'id': d['id'], 'title': d['title'], 'chapter': d['chapter'], 'difficulty': d['difficulty'], 'limit': d['limit'], 'version': digest, 'images': images, 'answers': answers})
+        write_json(temporary / 'stage.json', stage_value(result))
         write_json(temporary / 'provenance.json', {'version': 1, 'target': 'staging', 'contentDigest': digest, 'decision': decision, 'createdAt': timestamp()})
         os.rename(temporary, destination)
     finally:

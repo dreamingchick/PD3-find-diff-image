@@ -37,7 +37,7 @@ export async function load(){return (await edit(p=>({progress:p,value:undefined}
 export function subscribe(listener:()=>void){const b=bus();b?.addEventListener("message",listener);return()=>b?.removeEventListener("message",listener)}
 export async function replaceProgress(p:Progress){const validated=validateProgress(p);return (await edit(()=>({progress:validated,value:undefined}),true,true)).progress}
 export async function saveSession(id:string,s:Session){return (await edit(p=>{
- const old=p.sessions[id],session=old?.attemptId===s.attemptId?{...s,used:s.used||old.used,hints:Math.max(s.hints,old.hints),wrong:Math.max(s.wrong,old.wrong),elapsed:Math.max(s.elapsed,old.elapsed)}:s;
+ const old=p.sessions[id],session=old?.attemptId===s.attemptId&&old.contentVersion===s.contentVersion?{...s,used:s.used||old.used,hints:Math.max(s.hints,old.hints),wrong:Math.max(s.wrong,old.wrong),elapsed:Math.max(s.elapsed,old.elapsed)}:s;
  return {progress:{...p,sessions:{...p.sessions,[id]:session}},value:undefined};
 })).progress}
 export async function commitClear(id:string,mode:string,entry:Entry):Promise<{progress:Progress;value:Grant}>{return edit(p=>{
@@ -51,7 +51,7 @@ export async function commitHint(id:string,mode:string,s:Session,source:"free"|"
  return edit<{ok:boolean;reason?:"stale"|"empty"}>(p=>{
   if(mode==="normal"){
    const current=p.sessions[id];
-   if(!current||current.attemptId!==s.attemptId||current.hints!==s.hints||current.used!==s.used)return {progress:p,value:{ok:false,reason:"stale"}};
+   if(!current||current.attemptId!==s.attemptId||current.contentVersion!==s.contentVersion||current.hints!==s.hints||current.used!==s.used)return {progress:p,value:{ok:false,reason:"stale"}};
   }
   if((source==="free"&&s.used)||(source==="stock"&&!s.used))return {progress:p,value:{ok:false,reason:"stale"}};
   const spent=source==="stock"?spendStockHint(p.wallet):{wallet:p.wallet,ok:true};

@@ -30,8 +30,16 @@ The editor can now generate a **검수 요청 파일** after current pixel QA, c
 
 The offline [private review worker](../workers/content-review/README.md) independently decodes and checks each request. It stores immutable content revisions and a single explicit approval/rejection decision per revision. Only approved revisions can produce a private staging bundle, with a final image/pixel/digest recheck and matching provenance. It never modifies the active catalog or deploys a site. Its reviewer labels are trusted local operator declarations, not authenticated identities. Server roles and approval enforcement require a future identity/storage integration.
 
-Seven synthetic Python tests cover the review boundary, including actual concurrent decision writes and changed-content rejection. Two additional core tests cover canonical cross-runtime revisions and readiness; four additional browser cases cover request gating, partial versus complete test play, digest binding and edit/import invalidation. The full suites now have 32 Node tests, 64 browser cases, plus 7 review-worker and 3 image-pipeline Python tests.
+Synthetic tests cover the review boundary, including actual concurrent decision writes and changed-content rejection. Core tests cover canonical cross-runtime revisions and readiness; browser cases cover request gating, partial versus complete test play, digest binding and edit/import invalidation.
+
+## Selected private catalogs
+
+Approved revisions can now be assembled into an ordered private staging catalog, selected with a current-event concurrency check, rolled back to the previous valid release, and exported into private player build inputs. Every boundary rechecks the approval, stage metadata and image bytes. PD3-assets connects this to its build/QA workflow. Selection affects the next build; the protected live deployment changes only after build/QA/deployment. See [CATALOG.md](../workers/content-review/CATALOG.md).
+
+The player preserves optional content versions in unfinished sessions/backups and resumes only a matching revision. Updating or rolling back content resets stale found-answer positions while preserving historical records, stars and stage-wide first rewards. Legacy unversioned content retains compatible restoration. Server identity/roles, durable server storage and web-based activation remain pending.
 
 ## Verification
 
-Eight core tests cover validation, overlap/bounds, normalized judgment, chunked comparison and heatmaps, transparency/outside changes, defensive package parsing and ownership of parsed data. Sixteen browser cases across four viewports cover mouse/touch drawing, import/export, image digest mismatch, QA invalidation, autosave/reload, confirmed deletion and test-play isolation. Existing game and economy cases remain in the full suite. Private image integration is checked independently in PD3-assets.
+Validation includes 34 Node tests, 68 browser cases, 14 review/catalog Python tests and 3 image-pipeline tests. Private QA additionally compiles and plays a generated catalog after A → B → rollback A, then restores the actual build input. No real content receives synthetic approval.
+
+Coverage includes overlap/bounds, normalized judgment, chunked comparison/heatmaps, transparency/outside changes, defensive parsing and ownership of parsed data. Browser cases cover mouse/touch drawing, import/export, image digest mismatch, QA invalidation, autosave/reload, confirmed deletion and test-play isolation across four viewports. Existing game and economy cases remain in the full suite. Private image integration is checked independently in PD3-assets.

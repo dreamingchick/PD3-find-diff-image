@@ -1,8 +1,8 @@
 import type {RecordSet} from './rewards.mjs';
 import type {Wallet} from './economy.mjs';
-export type Session={found:number[];wrong:number;used:boolean;hints:number;elapsed:number;attemptId:string};
+export type Session={found:number[];wrong:number;used:boolean;hints:number;elapsed:number;attemptId:string;contentVersion?:string};
 export type Progress={version:2;revision:number;records:Record<string,RecordSet>;sessions:Record<string,Session>;wallet:Wallet};
-type Stage={id:string;requiredStars?:number;answers:{id:number}[]};
+type Stage={id:string;requiredStars?:number;version?:string;answers:{id:number}[]};
 export function emptyProgress():Progress;
 export function validateProgress(value:unknown):Progress;
 export function backup(value:Progress):string;

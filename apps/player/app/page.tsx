@@ -30,7 +30,7 @@ export default function Page(){
  useEffect(()=>{if(!loaded||clear||failed||menuOpen)return;const t=setInterval(()=>setElapsed(v=>v+1),1000);return()=>clearInterval(t)},[loaded,clear,failed,attempt,menuOpen]);
  useEffect(()=>()=>{if(timer.current)clearTimeout(timer.current)},[]);
  useEffect(()=>{if(!hydrated||screen!=="play"||mode!=="normal"||clear||!sessionToken)return;
-  saveSession(stageId,{found,wrong,used,hints:hintsUsed,elapsed,attemptId:sessionToken}).then(acceptProgress).catch(()=>setStorageError(true));
+  saveSession(stageId,{found,wrong,used,hints:hintsUsed,elapsed,attemptId:sessionToken,contentVersion:stage.version}).then(acceptProgress).catch(()=>setStorageError(true));
  },[hydrated,screen,mode,stageId,found,wrong,used,hintsUsed,elapsed,clear,sessionToken,acceptProgress]);
  useEffect(()=>{if(hydrated&&screen==="play"&&clear&&!recorded.current)persistClear()},[hydrated,screen,clear,key,result.score,result.stars,elapsed,wrong,hintsUsed]);
  function persistClear(){
@@ -43,12 +43,13 @@ export default function Page(){
   if(timer.current)clearTimeout(timer.current);recorded.current=false;
   setAttempt(v=>v+1);setStageId(id);setMode(m);setReady([false,false]);setError(false);setView({z:1,x:0,y:0});
   const s=resume&&m==="normal"?resumeSession(data,stages.find(s=>s.id===id)!):undefined;
+  const changed=resume&&m==="normal"&&data.sessions[id]&&!s;
   const token=s?.attemptId??crypto.randomUUID();currentAttempt.current=token;setSessionToken(token);setHintsUsed(s?.hints??0);setGrant(null);setClearError(false);
-  setFound(s?.found??[]);setWrong(s?.wrong??0);setUsed(s?.used??false);setElapsed(s?.elapsed??0);setHint(null);setMessage("");setMenuOpen(false);return true;
+  setFound(s?.found??[]);setWrong(s?.wrong??0);setUsed(s?.used??false);setElapsed(s?.elapsed??0);setHint(null);setMessage(changed?"그림이 업데이트되어 새로 시작해요. 기존 기록과 보상은 유지됩니다.":"");setMenuOpen(false);return true;
  }
  function start(id:string,m:string,push=true){if(!hydrated||!reset(id,m,true))return;setScreen("play");if(push)window.history.pushState({pd3Stage:id,pd3Mode:m},"","#play");window.scrollTo({top:0})}
  function home(back=true){
-  if(mode==="normal"&&!clear){const session:Session={found,wrong,used,elapsed,hints:hintsUsed,attemptId:sessionToken};setProgress(p=>({...p,sessions:{...p.sessions,[stageId]:session}}));saveSession(stageId,session).then(acceptProgress).catch(()=>setStorageError(true))}
+  if(mode==="normal"&&!clear){const session:Session={found,wrong,used,elapsed,hints:hintsUsed,attemptId:sessionToken,contentVersion:stage.version};setProgress(p=>({...p,sessions:{...p.sessions,[stageId]:session}}));saveSession(stageId,session).then(acceptProgress).catch(()=>setStorageError(true))}
   if(timer.current)clearTimeout(timer.current);setHint(null);setMenuOpen(false);setScreen("home");
   if(back&&window.history.state?.pd3Stage)window.history.back();window.scrollTo({top:0});
  }
@@ -60,7 +61,7 @@ export default function Page(){
   const available=answers.filter(a=>!found.includes(a.id));if(!loaded||clear||failed||hint!==null||pendingHint.current||!available.length||used&&progress.wallet.hints===0)return;
   const token=currentAttempt.current;pendingHint.current=true;setHintBusy(true);
   try{
-   const saved=await commitHint(stageId,mode,{found,wrong,used,hints:hintsUsed,elapsed,attemptId:token},used?"stock":"free");acceptProgress(saved.progress);
+   const saved=await commitHint(stageId,mode,{found,wrong,used,hints:hintsUsed,elapsed,attemptId:token,contentVersion:stage.version},used?"stock":"free");acceptProgress(saved.progress);
    if(currentAttempt.current!==token)return;
    if(!saved.value.ok){setMessage(saved.value.reason==="stale"?"진행이 바뀌었어요. 메인에서 이어서 찾아주세요.":"보유 힌트가 없어요.");return}
    const target=available[Math.floor(Math.random()*available.length)];setView(v=>{const z=Math.max(1,Math.min(v.z,.65/(Math.max(target.r,.035)*2)));return clampView({z,x:.5-target.x*z,y:.5-target.y*z})});
@@ -70,7 +71,7 @@ export default function Page(){
 
  if(screen==="home")return <StageLobby progress={progress} hydrated={hydrated} storageError={storageError} mode={mode} onMode={setMode} onStart={start} onProgress={acceptProgress} onRestore={async p=>{const saved=await replaceProgress(p);setProgress(saved);reset(stages[0].id,"normal",true,saved);setStorageError(false)}}/>;
  const next=stages[stages.findIndex(s=>s.id===stage.id)+1];
- return <main className="play-screen">
+ return <main className="play-screen" data-stage-version={stage.version??""}>
   <header className="play-header"><button className="icon-button" aria-label="메인으로 돌아가기" onClick={()=>home()}>‹</button><div><h1>{stage.title.replace(" (검수용)","")}</h1><p>{mode==="normal"?"일반":"도전"} · {mode==="challenge"?remaining:elapsed}초 · {result.score.toLocaleString()}점</p></div><button className="icon-button" aria-label="플레이 메뉴" onClick={()=>setMenuOpen(true)}>☰</button></header>
   <p id="puzzle-help" className="sr-only">그림을 터치해 차이를 찾으세요. 방향키로 조준하고 Enter로 선택합니다. Shift와 방향키는 미세 이동입니다. 두 손가락 또는 휠로 확대하고, 끌어서 이동하세요. 확대 상태에서도 터치로 찾을 수 있습니다.</p>
   <section className="pair" aria-label="두 그림 비교">{[0,1].map(side=><div className="puzzle-frame" key={attempt+":"+side}><PuzzleCanvas source={stage.images[side]} answers={answers} side={side} view={view} setView={setView} found={found} hint={hint} onHit={hit} onReady={(i,ok)=>{setReady(p=>p.map((v,j)=>i===j?ok:v));if(!ok)setError(true)}}/></div>)}</section>

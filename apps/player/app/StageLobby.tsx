@@ -1,6 +1,6 @@
 "use client";
 import {useState} from "react";
-import {stageStars,totalStars,unlocked} from "../../../packages/game-engine/progress.mjs";
+import {stageStars,totalStars,unlocked,resumeSession} from "../../../packages/game-engine/progress.mjs";
 import {stages} from "./stages";
 import BackupControls from "./BackupControls";
 import GrowthPanel from "./GrowthPanel";
@@ -11,7 +11,7 @@ export default function StageLobby({progress,hydrated,storageError,mode,onMode,o
  const [tab,setTab]=useState("main"),[filter,setFilter]=useState("all");
  const stars=totalStars(progress.records,stages),won=stages.filter(s=>stageStars(progress.records,s.id)>0).length;
  const visible=stages.filter(s=>filter==="all"||(filter==="won"?stageStars(progress.records,s.id)>0:stageStars(progress.records,s.id)===0));
- const resume=stages.find(s=>unlocked(progress.records,stages,s.id)&&progress.sessions[s.id]?.found.length);
+ const resume=stages.find(s=>unlocked(progress.records,stages,s.id)&&resumeSession(progress,s)?.found.length);
  const next=resume??stages.find(s=>unlocked(progress.records,stages,s.id)&&stageStars(progress.records,s.id)===0)??stages[0];
  return <main className="lobby">
   <header className="lobby-header"><a className="brand" href="#" onClick={e=>{e.preventDefault();setTab("main")}}>PD3<span>그림 속 작은 발견</span></a><span className="star-total" aria-label={`누적 별 ${stars} / ${stages.length*3}`}>★ {stars}<small> / {stages.length*3}</small></span><button className="icon-button" aria-label="설정 열기" onClick={()=>setTab("settings")}>⚙</button></header>
