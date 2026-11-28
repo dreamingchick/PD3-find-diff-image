@@ -1,0 +1,13 @@
+import type {Draft} from './index.mjs';
+export type Proof={version:number;contentDigest:string;requestedAt:string;testPlayCleared:boolean;semanticReviewConfirmed:boolean};
+export type ImageMeta={name:string;sha256:string;mime:string;path:string};
+export type Check={passed:boolean;message:string;validator_version:string};
+export type Decision={decision:'approved'|'rejected';note:string;actor_id:string;created_at:string};
+export type InboxRow={digest:string;draft:unknown;images:unknown;canonical:string;review_request:unknown;created_by:string;created_at:string;upload_complete:boolean;pd3_review_validations:Check|Check[]|null;pd3_review_decisions:Decision|Decision[]|null};
+export const BUCKET:string;
+export function adminConfig(v:unknown):{url:string;publishableKey:string};
+export function reviewProof(v:unknown,digest:string):Proof;
+export function submission(source:string):{draft:Draft;images:{name:string;data:string;sha256:string}[];proof:Proof;canonical:string};
+export function metadata(row:InboxRow):{draft:Draft;images:ImageMeta[];proof:Proof};
+export function one<T>(v:T|T[]|null):T|null;
+export function status(row:InboxRow):string;
