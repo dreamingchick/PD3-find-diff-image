@@ -12,7 +12,7 @@
     "test": "node --test packages/game-engine/*.test.mjs packages/studio-core/*.test.mjs",
     "test:e2e": "playwright test",
     "test:server": "node --test packages/server-policy/*.test.mjs",
-    "test:worker": "node --test scripts/validate-inbox.test.mjs"
+    "test:worker": "node --test scripts/validate-inbox.test.mjs scripts/export-approved-review.test.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.6.1",
