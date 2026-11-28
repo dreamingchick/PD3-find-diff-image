@@ -108,6 +108,7 @@ test('hint recenters an offscreen answer and remains selectable while zoomed',as
  await page.mouse.move(b.x+b.width*.9,b.y+b.height*.9);await page.mouse.wheel(0,-3000);
  await expect.poll(async()=>Number(await canvas.getAttribute('data-zoom'))).toBeGreaterThan(3);
  await page.getByRole('button',{name:'힌트 1',exact:true}).click();
+ await expect(page.getByText('밝은 원 안의 차이를 찾아보세요.',{exact:true})).toBeVisible();
  await expect.poll(async()=>Number(await canvas.getAttribute('data-zoom'))).toBeGreaterThan(1.9);
  await page.mouse.click(b.x+b.width*.5,b.y+b.height*.5);
  await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow','1');

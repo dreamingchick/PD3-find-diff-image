@@ -1,5 +1,7 @@
 import type {RecordSet} from './rewards.mjs';
-export type Progress={records:Record<string,RecordSet>;sessions:Record<string,{found:number[];wrong:number;used:boolean;elapsed:number}>};
+import type {Wallet} from './economy.mjs';
+export type Session={found:number[];wrong:number;used:boolean;hints:number;elapsed:number;attemptId:string};
+export type Progress={version:2;revision:number;records:Record<string,RecordSet>;sessions:Record<string,Session>;wallet:Wallet};
 type Stage={id:string;requiredStars?:number;answers:{id:number}[]};
 export function emptyProgress():Progress;
 export function validateProgress(value:unknown):Progress;
@@ -8,4 +10,4 @@ export function restore(text:string):Progress;
 export function stageStars(records:Progress['records'],id:string):number;
 export function totalStars(records:Progress['records'],stages:{id:string}[]):number;
 export function unlocked(records:Progress['records'],stages:Stage[],id:string):boolean;
-export function resumeSession(progress:Progress,stage:Stage):Progress['sessions'][string]|undefined;
+export function resumeSession(progress:Progress,stage:Stage):Session|undefined;

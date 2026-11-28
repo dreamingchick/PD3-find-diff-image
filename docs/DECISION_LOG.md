@@ -1,2 +1,4 @@
 # Decision log
 2026-11-27: Q1–240 검토 종료. Q141 무료 무광고; Q142–170 보류. Q122 광고 힌트 폐기. Q101/178/179/181 일반 회원 및 계정 이전 폐기, 관리자 인증 유지. Q137 최초 도전 제한은 Q219 최고 기록 갱신으로 대체. Q191 로컬 경제로 조정(서버 원장은 공식 경쟁에 한정). Q194/195/231 공개 GitHub 서비스 이미지와 비공개 제작 리소스 분리. Q193 KST 자정. 세부 밸런스/닉네임 변경 간격/로그 기간/시즌 산식/호스팅 미확정.
+
+2026-11-28: user accepted private playtest QA for the existing three stages and requested the next growth/reward increment. Keep first rewards stage-wide across modes. Use provisional 100 coins/60 EXP, 100 EXP levels and 25-coin hint exchange; no payment service. Preserve existing progress and v1 backups, migrate old completions once, and keep all records local practice data.
